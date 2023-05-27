@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "target": "es2021",
+        "lib": ["es2021"],
+
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "types": ["@cloudflare/workers-types"],
+
+        "resolveJsonModule": true,
+        "allowJs": false,
+        "checkJs": false,
+        "outDir": "dist",
+        "isolatedModules": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "noImplicitAny": false
+    },
+    "ts-node": {
+        "transpileOnly": false,
+        "lib": ["ESNext"],
+        "target": "ES2021",
+        "files": true,
+        "compilerOptions": {
+            "module": "NodeNext",
+            "moduleResolution": "NodeNext"
+        }
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+}

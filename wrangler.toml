@@ -1,0 +1,6 @@
+name = "worker-github-actions"
+main = "src/index.ts"
+compatibility_date = "2023-04-28"
+
+[triggers]
+crons = [ "*/10 * * * *" ]
