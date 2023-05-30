@@ -2,7 +2,12 @@
 name: Preview Cloudflare Worker
 
 on:
-  pull_request_target:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+      - closed
     branches:
       - master
 
