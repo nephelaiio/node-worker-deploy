@@ -9,8 +9,8 @@ import * as dotenv from 'dotenv';
 import { logger, LOG_LEVELS } from './logger.js';
 import { listWorkers } from './cloudflare.js';
 
-const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
+const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || null;
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_ACCOUNT_TOKEN || null;
 const cwd = process.cwd();
 
 if (fs.existsSync(`${cwd}/.env`)) {
