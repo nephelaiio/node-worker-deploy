@@ -18,7 +18,8 @@ jobs:
         run: npm install
 
       - name: Deploy Cloudflare Worker
-        run: npm run delete --verbose
+        run: |
+          npm run delete --verbose
 
   deploy:
     if: github.event.pull_request.type != 'closed'
@@ -36,7 +37,7 @@ jobs:
         run: npm install
 
       - name: Deploy Cloudflare Worker
-        run: >-
+        run: |
           npm run deploy -- --literal GITHUB_APPLY:true
             --secret GITHUB_TOKEN:GH_TOKEN
             --verbose
@@ -46,6 +47,6 @@ jobs:
           WRANGLER_SEND_METRICS: false
 
       - name: Test deployed Cloudflare worker
-        run: >-
+        run: |
           curl -sD-
             https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
