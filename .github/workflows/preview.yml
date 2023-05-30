@@ -2,40 +2,40 @@
 name: Preview Cloudflare Worker
 
 on:
-    pull_request_target:
-        branches:
-            - master
+  pull_request_target:
+    branches:
+      - master
 
 jobs:
-    clean:
-        if: github.event.pull_request.type != 'closed'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
+  clean:
+    if: github.event.pull_request.type == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-            - name: Install dependencies
-              run: npm install
+      - name: Install dependencies
+        run: npm install
 
-            - name: Deploy Cloudflare Worker
-              run: npm run delete
+      - name: Deploy Cloudflare Worker
+        run: npm run delete
 
-    deploy:
-        if: github.event.pull_request.type == 'closed'
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
+  deploy:
+    if: github.event.pull_request.type != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-            - name: Install dependencies
-              run: npm install
+      - name: Install dependencies
+        run: npm install
 
-            - name: Deploy Cloudflare Worker
-              run:
-                  npm run deploy -- --literal GITHUB_APPLY:true --secret
-                  GITHUB_TOKEN:GH_TOKEN
+      - name: Deploy Cloudflare Worker
+        run:
+            npm run deploy -- --literal GITHUB_APPLY:true --secret
+            GITHUB_TOKEN:GH_TOKEN
 
-            - name: Test deployed Cloudflare worker
-              run: >-
-                  curl -sD-
-                    https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
+      - name: Test deployed Cloudflare worker
+        run: >-
+            curl -sD-
+              https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
