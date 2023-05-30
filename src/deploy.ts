@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Command } from 'commander';
 import { execSync } from 'child_process';
 
@@ -88,8 +91,8 @@ async function checkSecrets(secrets: string[]) {
 }
 
 async function checkVariables(variables: { [id: string]: string }) {
-    logger.debug('Checking environment variables');
-    Object.entries(variables).forEach(([k, v]) => {
+    logger.debug('Checking enrironment variables');
+    Object.entries(variables).forEach(([_, v]) => {
         if (!process.env[v]) {
             logger.fatal(`Environment variable '${v}' is not set`);
             process.exit(1);
