@@ -2,13 +2,12 @@
 name: test
 
 on:
-  pull_request:
-    branches:
+  push:
+    branches-ignore:
       - master
 
 jobs:
-  test:
-    needs: lint
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,4 +17,4 @@ jobs:
         run: npm install
 
       - name: Run tests
-        run: npm test
+        run: npm run lint
