@@ -123,6 +123,8 @@ async function main() {
     .slice(-2)
     .join('/');
   const project = repo.split('/').at(-1);
+  logger.debug('Deploying project {project}');
+  logger.debug('Deploying branch {branch}');
   const program = new Command();
   const checks: Promise<void>[] = [];
   const collect = (value: string, previous: string[]) =>
