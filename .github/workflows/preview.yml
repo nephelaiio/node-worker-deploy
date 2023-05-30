@@ -49,7 +49,8 @@ jobs:
         run: |
           echo repository=$GITHUB_REPOSITORY ; \
           echo owner=$GITHUB_REPOSITORY_OWNER ; \
-          echo head=$GITHUB_HEAD_REF
+          echo head=$GITHUB_HEAD_REF ; \
+          echo url=https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
 
       - name: Test deployed Cloudflare worker
         run: |
