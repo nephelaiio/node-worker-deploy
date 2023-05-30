@@ -2,32 +2,32 @@
 name: Test
 
 on:
-    push:
-        branches-ignore:
-            - master
+  push:
+    branches-ignore:
+      - master
 
 jobs:
-    test:
-        needs: lint
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-            - name: Install dependencies
-              run: npm install
+      - name: Install dependencies
+        run: npm install
 
-            - name: Run tests
-              run: npm test
+      - name: Run tests
+        run: npm test
 
-    lint:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-            - name: Install dependencies
-              run: npm install
+      - name: Install dependencies
+        run: npm install
 
-            - name: Run tests
-              run: npm run lint
+      - name: Run tests
+        run: npm run lint

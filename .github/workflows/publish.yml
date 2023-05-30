@@ -2,22 +2,22 @@
 name: Publish Cloudflare Worker
 
 on:
-    pull_request_target:
-        branches:
-            - master
-        types:
-            - closed
+  pull_request_target:
+    branches:
+      - master
+    types:
+      - closed
 
 jobs:
-    publish:
-        if: github.event.pull_request.merged == true
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
+  publish:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-            - name: Install dependencies
-              run: npm install
+      - name: Install dependencies
+        run: npm install
 
-            - name: Publish package to NPM
-              run: echo deploy to NPM
+      - name: Publish package to NPM
+        run: echo deploy to NPM

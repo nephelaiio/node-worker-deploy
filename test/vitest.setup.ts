@@ -10,90 +10,90 @@ import repo193786081 from './repo.193786081.json';
 import workers from './workers.json';
 
 export const restHandlers = [
-    rest.get('https://api.github.com/nephelaiio/repos', (req, res, ctx) => {
-        return res(ctx.status(200), ctx.json(repos));
-    }),
-    rest.put(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/enable',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json({}),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
+  rest.get('https://api.github.com/nephelaiio/repos', (req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(repos));
+  }),
+  rest.put(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/enable',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json({}),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
 
-    rest.get(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json(repoWorkflows),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.get(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/469422',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json(workflow4669422),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.get(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/469423',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json(workflow4669423),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.put(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/4669422/enable',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json({}),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.put(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/4669423/enable',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json({}),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.get(
-        'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json(repo193786081),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    ),
-    rest.get(
-        'https://api.cloudflare.com/client/v4/accounts/nephelaiio/workers/scripts',
-        (req, res, ctx) => {
-            return res(
-                ctx.status(200),
-                ctx.json(workers),
-                ctx.set('Content-Type', 'application/json')
-            );
-        }
-    )
+  rest.get(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json(repoWorkflows),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.get(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/469422',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json(workflow4669422),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.get(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/469423',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json(workflow4669423),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.put(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/4669422/enable',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json({}),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.put(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/4669423/enable',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json({}),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.get(
+    'https://api.github.com/repos/nephelaiio/ansible-role-metricbeat',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json(repo193786081),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  ),
+  rest.get(
+    'https://api.cloudflare.com/client/v4/accounts/nephelaiio/workers/scripts',
+    (req, res, ctx) => {
+      return res(
+        ctx.status(200),
+        ctx.json(workers),
+        ctx.set('Content-Type', 'application/json')
+      );
+    }
+  )
 ];
 
 const server = setupServer(...restHandlers);

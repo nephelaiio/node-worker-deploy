@@ -31,11 +31,11 @@ jobs:
         run: npm install
 
       - name: Deploy Cloudflare Worker
-        run:
-            npm run deploy -- --literal GITHUB_APPLY:true --secret
-            GITHUB_TOKEN:GH_TOKEN
+        run: >-
+          npm run deploy -- --literal GITHUB_APPLY:true
+            --secret GITHUB_TOKEN:GH_TOKEN
 
       - name: Test deployed Cloudflare worker
         run: >-
-            curl -sD-
-              https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
+          curl -sD-
+          https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
