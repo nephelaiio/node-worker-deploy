@@ -47,7 +47,6 @@ async function deploy(
   literals: { [id: string]: string } = {},
   secrets: { [id: string]: string } = {}
 ): Promise<void> {
-  logger.debug(`Deploying worker ${name}`);
   const varArgs = Object.entries(variables)
     .map(([k, v]) => `${k}:${process.env[v]}`)
     .reduce((x, y) => `${x} --var ${y}`, '');
