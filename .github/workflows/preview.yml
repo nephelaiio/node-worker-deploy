@@ -45,6 +45,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
 
+      - name: Debug env vars
+        run: |
+          echo repository=$GITHUB_REPOSITORY ; \
+          echo owner=$GITHUB_REPOSITORY_OWNER ; \
+          echo head=$GITHUB_HEAD_REF
+
       - name: Test deployed Cloudflare worker
         run: |
           curl -sD- https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
