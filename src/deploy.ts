@@ -75,6 +75,10 @@ async function checkEnvironment() {
     logger.fatal('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
     process.exit(1);
   }
+  if (!fs.existsSync('wrangler.toml')) {
+    logger.fatal('Could not find wrangler.toml in working directory');
+    process.exit(1);
+  }
 }
 
 async function checkSecrets(secrets: string[]) {

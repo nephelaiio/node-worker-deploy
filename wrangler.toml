@@ -1,6 +1,7 @@
-name = "worker-github-actions"
+name = "node-worker-deploy"
 main = "src/index.ts"
 compatibility_date = "2023-04-28"
+workers_dev = true
 
 [triggers]
 crons = [ "*/10 * * * *" ]
