@@ -38,4 +38,4 @@ jobs:
       - name: Test deployed Cloudflare worker
         run: >-
           curl -sD-
-          https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
+            https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
