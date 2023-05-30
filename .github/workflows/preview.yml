@@ -34,6 +34,9 @@ jobs:
         run: >-
           npm run deploy -- --literal GITHUB_APPLY:true
             --secret GITHUB_TOKEN:GH_TOKEN
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ vars.CF_ACCOUNT_TOKEN }}
 
       - name: Test deployed Cloudflare worker
         run: >-

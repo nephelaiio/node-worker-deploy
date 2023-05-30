@@ -9,8 +9,8 @@ import * as dotenv from 'dotenv';
 import { logger, LOG_LEVELS } from './logger.js';
 import { listWorkers } from './cloudflare.js';
 
-const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || null;
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || process.env.CF_ACCOUNT_TOKEN || null;
+const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
+const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
 const cwd = process.cwd();
 
 if (fs.existsSync(`${cwd}/.env`)) {
@@ -67,11 +67,11 @@ async function deploy(
 
 async function checkEnvironment() {
   if (!CLOUDFLARE_API_TOKEN) {
-    logger.fatal('CLOUDFLARE_API_TOKEN environment variable is not set');
+    logger.fatal('CLOUDFLARE_API_TOKEN environment variable must be set');
     process.exit(1);
   }
   if (!CLOUDFLARE_ACCOUNT_ID) {
-    logger.fatal('CLOUDFLARE_ACCOUNT_ID environment variable is not set');
+    logger.fatal('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
     process.exit(1);
   }
 }
@@ -80,7 +80,7 @@ async function checkSecrets(secrets: string[]) {
   logger.debug('Checking secret variables');
   Object.entries(secrets).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.fatal(`Environment variable '${v}' is not set`);
+      logger.fatal(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
@@ -91,7 +91,7 @@ async function checkVariables(variables: { [id: string]: string }) {
   logger.debug('Checking enrironment variables');
   Object.entries(variables).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.fatal(`Environment variable '${v}' is not set`);
+      logger.fatal(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
