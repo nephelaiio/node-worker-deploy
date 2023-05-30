@@ -38,6 +38,7 @@ function execute(
 }
 
 const run = (command: string): string => execute(command, 'run');
+const exec = (command: string): string => execute(command, 'exec');
 const cli = (command: string): string => execute(command, 'cli');
 
 async function deploy(
@@ -54,11 +55,11 @@ async function deploy(
     .map(([k, v]) => `${k}:${v}`)
     .reduce((x, y) => `${x} --var ${y}`, '');
   const publishCmd = `wrangler publish`;
-  const publishArgs = `--project-name ${name} ${varArgs} ${literalArgs}`;
+  const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
   const publishScript = `${publishCmd} -- ${publishArgs}`;
-  const publishOutput = run(publishScript);
+  const publishOutput = exec(publishScript);
   const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
-  const secretCmd = `npm run wrangler secret put -- --name ${name}`;
+  const secretCmd = `npm exec wrangler secret put -- --name ${name}`;
   Object.entries(secrets)
     .map(([k, v]) => `echo ${process.env[v]} | ${secretCmd} ${k}`)
     .forEach((s) => cli(s));

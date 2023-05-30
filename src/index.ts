@@ -6,9 +6,12 @@ export interface Env {
 }
 
 export default {
+  async fetch(request: Request, env: Env, _: ExecutionContext) {
+    this.handleRequest(request, env);
+  },
+
   async handleRequest(request: Request, env: Env): Promise<Response> {
-    return new Response(
-      `Hello world from ${env.GITHUB_APPLY ? 'apply' : 'check'} mode`
-    );
+    const mode = env.GITHUB_APPLY ? 'apply' : 'check';
+    return new Response(`Hello world on ${request.url} using ${mode} mode`);
   }
 };
