@@ -5,7 +5,7 @@
   "description": "",
   "main": "deploy.js",
   "bin": {
-    "deploy": "./deploy.ts"
+    "node-worker-deploy": "./deploy.ts"
   },
   "scripts": {
     "test": "vitest run",
