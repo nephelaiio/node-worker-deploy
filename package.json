@@ -1,5 +1,5 @@
 {
-  "name": "@nephelaiio/worker-deploy",
+  "name": "nephelaiio/node-worker-deploy",
   "type": "module",
   "version": "1.0.0",
   "description": "",
