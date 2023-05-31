@@ -1,5 +1,3 @@
-import { logger } from './logger.js';
-
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 
 const cloudflareAPI = async (
@@ -7,6 +5,7 @@ const cloudflareAPI = async (
   path: string,
   method: ApiMethod = 'GET',
   body: object | null = null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -27,6 +26,7 @@ const cloudflareAPI = async (
       });
     }
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: any = (await fetchData(uri)).json();
   const isPaged = data.result_info && data.result_info.total_pages > 1;
   if (method == 'GET' && isPaged) {
@@ -46,6 +46,7 @@ const cloudflareAPI = async (
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function listWorkers(token: string, account: string): Promise<any> {
   const workers = await cloudflareAPI(
     token,
