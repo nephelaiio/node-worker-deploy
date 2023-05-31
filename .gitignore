@@ -3,6 +3,7 @@
 *.log
 tmp/
 dist/
+build/
 
 *.tern-port
 node_modules/

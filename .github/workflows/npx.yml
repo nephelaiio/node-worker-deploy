@@ -10,5 +10,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
+      - name: Build project
+        run: npm run build
+
       - name: Run npx
-        run: npx --no-cache --yes --verbose github:nephelaiio/node-worker-deploy -- --help
+        run: ./dist/deploy.cjs -- --help
