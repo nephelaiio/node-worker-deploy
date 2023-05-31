@@ -5,13 +5,13 @@ export interface Env {
   GITHUB_APPLY: boolean;
 }
 
-export default {
-  async fetch(request: Request, env: Env, _: ExecutionContext) {
-    this.handleRequest(request, env);
-  },
+async function fetch(request: Request, env: Env, _: ExecutionContext) {
+  return handleRequest(request, env);
+}
 
-  async handleRequest(request: Request, env: Env): Promise<Response> {
-    const mode = env.GITHUB_APPLY ? 'apply' : 'check';
-    return new Response(`Hello world on ${request.url} using ${mode} mode`);
-  }
-};
+async function handleRequest(request: Request, env: Env): Promise<Response> {
+  const mode = env.GITHUB_APPLY ? 'apply' : 'check';
+  return new Response(`Hello world on ${request.url} using ${mode} mode`);
+}
+
+export default { fetch };

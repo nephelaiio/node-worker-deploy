@@ -12,8 +12,8 @@
     "build": "tsc",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
     "format": "prettier --plugin-search-dir . --write .",
-    "deploy": "NODE_OPTIONS='--no-warnings' ts-node --esm src/deploy.ts deploy",
-    "delete": "NODE_OPTIONS='--no-warnings' ts-node --esm src/deploy.ts delete"
+    "deploy": "npm run build ; node --no-warnings ./dist/deploy.js deploy",
+    "delete": "npm run build ; node --no-warnings ./dist/deploy.js delete"
   },
   "author": "",
   "license": "ISC",
@@ -35,6 +35,6 @@
   "dependencies": {
     "octokit": "^2.0.14",
     "winston": "^3.9.0",
-    "wrangler": "^2.20.0"
+    "wrangler": "^3.0.1"
   }
 }

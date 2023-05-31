@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 import { logger, verbose, quiet, info } from './logger.js';
-import { getWorker, getDeployments } from './cloudflare.js';
+import { getWorker, getSubdomain } from './cloudflare.js';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
@@ -37,7 +37,6 @@ function execute(
   }
 }
 
-const run = (command: string): string => execute(command, 'run');
 const exec = (command: string): string => execute(command, 'exec');
 const cli = (command: string): string => execute(command, 'cli');
 
@@ -53,10 +52,10 @@ async function deploy(
   const literalArgs = Object.entries(literals)
     .map(([k, v]) => `${k}:${v}`)
     .reduce((x, y) => `${x} --var ${y}`, '');
-  const publishCmd = `wrangler publish`;
+  const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
   const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
   const publishScript = `${publishCmd} -- ${publishArgs}`;
-  const publishOutput = exec(publishScript);
+  const publishOutput = cli(publishScript);
   const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
   const secretCmd = `npm exec wrangler secret put -- --name ${name}`;
   Object.entries(secrets)
@@ -102,12 +101,32 @@ async function checkVariables(variables: { [id: string]: string }) {
   logger.debug('Environment validation successful');
 }
 
+async function checkWorkerSubdomain(
+  token = `${CLOUDFLARE_API_TOKEN}`,
+  account = `${CLOUDFLARE_ACCOUNT_ID}`
+) {
+  const domain = getSubdomain(token, account);
+  if (!domain) {
+    logger.error('Cloudflare workers.dev subdomain must be set for account');
+    process.exit(1);
+  }
+}
+
 function workerName(project: string, branch: string): string {
   if (branch == 'main' || branch == 'master') {
     return project;
   } else {
     return `${project}-${branch}`;
   }
+}
+
+async function workerURL(
+  name: string,
+  token = `${CLOUDFLARE_API_TOKEN}`,
+  account = `${CLOUDFLARE_ACCOUNT_ID}`
+): Promise<string> {
+  const domain = await getSubdomain(token, account);
+  return `https://${name}.${domain}.workers.dev`;
 }
 
 async function main() {
@@ -202,17 +221,16 @@ async function main() {
         },
         {}
       );
+      const worker = workerName(project, `${branch}`);
       checks.push(checkSecrets(secretArgs));
       checks.push(checkVariables(varArgs));
+      checks.push(checkWorkerSubdomain());
       Promise.all(checks).then(() => {
-        const worker = workerName(project, `${branch}`);
         logger.info(`Deploying worker ${worker}`);
         deploy(worker, varArgs, literalArgs, secretArgs);
-        getDeployments(
-          `${CLOUDFLARE_API_TOKEN}`,
-          `${CLOUDFLARE_ACCOUNT_ID}`,
-          worker
-        );
+        workerURL(worker).then((url) => {
+          console.log(url);
+        });
       });
     });
 

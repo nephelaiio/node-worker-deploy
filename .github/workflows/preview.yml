@@ -37,21 +37,17 @@ jobs:
         run: npm install
 
       - name: Deploy Cloudflare Worker
-        run: |
-          npm run deploy -- --verbose --literal GITHUB_APPLY:true --secret GITHUB_TOKEN:GH_TOKEN
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo npm run deploy -- --verbose --literal GITHUB_APPLY:true --secret GITHUB_TOKEN:GH_TOKEN
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
-
-      - name: Debug env vars
-        run: |
-          echo repository=$GITHUB_REPOSITORY ; \
-          echo owner=$GITHUB_REPOSITORY_OWNER ; \
-          echo head=$GITHUB_HEAD_REF ; \
-          echo url=https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
+        id: deploy
 
       - name: Test deployed Cloudflare worker
         run: |
-          curl -sD- https://${GITHUB_REPOSITORY/$GITHUB_REPOSITORY_OWNER\//}-${GITHUB_HEAD_REF}
+          echo curl -sD- ${{ steps.deploy.outputs.stdout }}

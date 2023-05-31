@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { logger } from './logger.js';
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
@@ -7,7 +9,6 @@ const cloudflareAPI = async (
   path: string,
   method: ApiMethod = 'GET',
   body: object | null = null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -29,7 +30,6 @@ const cloudflareAPI = async (
       });
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data: any = (await fetchData(uri)).json();
   const isPaged = data.result_info && data.result_info.total_pages > 1;
   if (method == 'GET' && isPaged) {
@@ -50,26 +50,36 @@ const cloudflareAPI = async (
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function listWorkers(token: string, account: string): Promise<any> {
   const workers = await cloudflareAPI(
     token,
     `/accounts/${account}/workers/scripts`
   );
-  return workers;
+  return workers.result;
 }
 
 async function getWorker(
   token: string,
   account: string,
   name: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
-  const workerRequest = await listWorkers(token, account);
-  const workers = workerRequest.result;
+  const workers = await listWorkers(token, account);
   const matchWorkers = workers.filter((w: any) => w.id == name);
   if (matchWorkers.length > 0) {
     return matchWorkers[0];
+  } else {
+    return null;
+  }
+}
+
+async function getSubdomain(token: string, account: string): Promise<any> {
+  const subdomainQuery = await cloudflareAPI(
+    token,
+    `/accounts/${account}/workers/subdomain`
+  );
+  const subdomains = subdomainQuery.result;
+  if (subdomains) {
+    return subdomains.subdomain;
   } else {
     return null;
   }
@@ -79,19 +89,20 @@ async function getDeployments(
   token: string,
   account: string,
   name: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   const worker = await getWorker(token, account, name);
   if (worker) {
-    const domains = await cloudflareAPI(
+    const domainQuery = await cloudflareAPI(
       token,
-      `/accounts/${account}/workers/deployments/by-script/{name}`
+      `/accounts/${account}/workers/deployments/by-script/${name}`
     );
-    domains.result.map(JSON.stringify).map(logger.debug);
-    return domains;
-  } else {
-    return null;
+    const domains = domainQuery.result;
+    if (domains) {
+      domains.result.map(JSON.stringify).map(logger.debug);
+      return domains;
+    }
   }
+  return null;
 }
 
-export { listWorkers, getWorker, getDeployments };
+export { listWorkers, getWorker, getDeployments, getSubdomain };
