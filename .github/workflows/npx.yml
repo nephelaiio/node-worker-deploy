@@ -1,0 +1,14 @@
+---
+name: npx
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run npx
+        run: npx --no-cache --yes --verbose github:nephelaiio/node-worker-deploy -- --help
