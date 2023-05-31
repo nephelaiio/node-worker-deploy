@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 import { logger, verbose, quiet, info } from './logger.js';
-import { listWorkers } from './cloudflare.js';
+import { getWorker, getDeployments } from './cloudflare.js';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
@@ -208,6 +208,11 @@ async function main() {
         const worker = workerName(project, `${branch}`);
         logger.info(`Deploying worker ${worker}`);
         deploy(worker, varArgs, literalArgs, secretArgs);
+        getDeployments(
+          `${CLOUDFLARE_API_TOKEN}`,
+          `${CLOUDFLARE_ACCOUNT_ID}`,
+          worker
+        );
       });
     });
 
@@ -215,15 +220,14 @@ async function main() {
     Promise.all(checks).then(async () => {
       const worker = workerName(project, `${branch}`);
       if (worker != project) {
-        const request = await listWorkers(
+        const deployment = await getWorker(
           `${CLOUDFLARE_API_TOKEN}`,
-          `${CLOUDFLARE_ACCOUNT_ID}`
+          `${CLOUDFLARE_ACCOUNT_ID}`,
+          worker
         );
-        const workers = request.result;
-        const matchWorkers = workers.filter((w: any) => w.id == worker);
-        if (matchWorkers.length > 0) {
+        if (deployment) {
           logger.info(`Deleting worker ${worker}`);
-          run(`wrangler delete --name ${worker}`);
+          exec(`wrangler delete --name ${worker}`);
         } else {
           logger.debug(`Worker ${worker} not found`);
         }
