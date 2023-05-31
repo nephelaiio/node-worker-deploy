@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { execSync } from 'child_process';
 
 import git from 'isomorphic-git';
@@ -6,7 +6,7 @@ import git from 'isomorphic-git';
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
-import { logger, LOG_LEVELS } from './logger.js';
+import { logger, verbose, quiet, info } from './logger.js';
 import { listWorkers } from './cloudflare.js';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
@@ -67,15 +67,15 @@ async function deploy(
 
 async function checkEnvironment() {
   if (!CLOUDFLARE_API_TOKEN) {
-    logger.fatal('CLOUDFLARE_API_TOKEN environment variable must be set');
+    logger.error('CLOUDFLARE_API_TOKEN environment variable must be set');
     process.exit(1);
   }
   if (!CLOUDFLARE_ACCOUNT_ID) {
-    logger.fatal('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
+    logger.error('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
     process.exit(1);
   }
   if (!fs.existsSync('wrangler.toml')) {
-    logger.fatal('Could not find wrangler.toml in working directory');
+    logger.error('Could not find wrangler.toml in working directory');
     process.exit(1);
   }
 }
@@ -84,7 +84,7 @@ async function checkSecrets(secrets: string[]) {
   logger.debug('Checking secret variables');
   Object.entries(secrets).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.fatal(`Environment variable '${v}' must be set`);
+      logger.error(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
@@ -95,7 +95,7 @@ async function checkVariables(variables: { [id: string]: string }) {
   logger.debug('Checking enrironment variables');
   Object.entries(variables).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.fatal(`Environment variable '${v}' must be set`);
+      logger.error(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
@@ -126,8 +126,9 @@ async function main() {
     .slice(-2)
     .join('/');
   const project = repo.split('/').at(-1);
-  logger.debug('Deploying project {project}');
-  logger.debug('Deploying branch {branch}');
+  const asyncLogs = {
+    debug: [`Deploying project ${project}`, `Deploying branch ${branch}`]
+  };
   const program = new Command();
   const checks: Promise<void>[] = [];
   const collect = (value: string, previous: string[]) =>
@@ -137,15 +138,26 @@ async function main() {
     .version('0.0.1', '--version', 'output the current version')
     .description('page deployment tool')
     .helpOption('-h, --help', 'output usage information')
-    .option('-v, --verbose', 'verbose output', false)
-    .option('-q, --quiet', 'quiet output (overrides verbose)', false)
-    .option('-k, --insecure', 'disable ssl verification', false)
+    .addOption(
+      new Option('-v, --verbose', 'verbose output')
+        .default(false)
+        .conflicts('quiet')
+    )
+    .addOption(
+      new Option('-q, --quiet', 'quiet output')
+        .default(false)
+        .conflicts('verbose')
+    )
+    .addOption(
+      new Option('-k, --insecure', 'disable ssl verification').default(false)
+    )
     .hook('preAction', (program, _) => {
       const isVerbose = program.opts()['verbose'];
       const isQuiet = program.opts()['quiet'];
       const isInsecure = program.opts()['insecure'];
-      if (isVerbose) logger.settings.minLevel = LOG_LEVELS.debug;
-      if (isQuiet) logger.settings.minLevel = LOG_LEVELS.fatal;
+      if (isVerbose) verbose(asyncLogs);
+      if (isQuiet) quiet(asyncLogs);
+      if (!isQuiet && !isVerbose) info(asyncLogs);
       if (isInsecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
       logger.debug(`Validating deployment parameters`);
       checks.push(checkEnvironment());

@@ -1,18 +1,42 @@
-import type { ILogObj } from 'tslog';
-import { Logger } from 'tslog';
+import { createLogger, transports, format, config } from 'winston';
 
 const LOG_LEVELS = {
-  silly: 0,
-  trace: 1,
-  debug: 2,
-  info: 3,
-  warn: 4,
-  error: 5,
-  fatal: 6
+  debug: 'debug',
+  info: 'info',
+  fatal: 'error'
 };
-const logger: Logger<ILogObj> = new Logger({
-  name: 'worker',
-  minLevel: LOG_LEVELS.info
+
+const stdErrTransport = new transports.Console({
+  stderrLevels: ['error', 'warn', 'info', 'debug'],
+  format: format.combine(
+    format.timestamp(),
+    format.align(),
+    format.printf(({ timestamp, level, message }) => {
+      return `${timestamp} ${level.toUpperCase()} ${message}`;
+    })
+  )
 });
 
-export { logger, LOG_LEVELS };
+const logger = createLogger({
+  transports: [stdErrTransport]
+});
+
+logger.levels;
+
+type messages = {
+  debug: string[];
+};
+const empty: messages = {
+  debug: []
+};
+
+function init(level: string, messages: messages = empty): void {
+  logger.level = level;
+  messages.debug.map(logger.debug);
+}
+
+const info = (msgs: messages = empty) => init(LOG_LEVELS.debug, msgs);
+const verbose = (msgs: messages = empty) => init(LOG_LEVELS.debug, msgs);
+const quiet = (msgs: messages = empty) => init(LOG_LEVELS.fatal, msgs);
+
+export { logger, verbose, quiet, info };
