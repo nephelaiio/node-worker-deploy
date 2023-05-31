@@ -1,7 +1,7 @@
 # Worker Deploy
 
-[![Test](https://github.com/nephelaiio/worker-deploy/actions/workflows/test.yml/badge.svg)](https://github.com/nephelaiio/worker-github-actions/actions/workflows/test.yml)
-[![Deploy](https://github.com/nephelaiio/worker-deploy/actions/workflows/publish.yml/badge.svg)](https://github.com/nephelaiio/worker-github-actions/actions/workflows/main.yml)
+[![Test](https://github.com/nephelaiio/node-worker-deploy/actions/workflows/test.yml/badge.svg)](https://github.com/nephelaiio/node-worker-github-actions/actions/workflows/test.yml)
+[![Deploy](https://github.com/nephelaiio/node-worker-deploy/actions/workflows/publish.yml/badge.svg)](https://github.com/nephelaiio/node-worker-github-actions/actions/workflows/main.yml)
 
 Worker deploy is an NPM package that uses
 [Cloudflare Workers API](https://developers.cloudflare.com/workers) to automate

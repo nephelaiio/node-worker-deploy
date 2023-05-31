@@ -1,0 +1,12 @@
+{
+  "id": 4669422,
+  "node_id": "MDg6V29ya2Zsb3c0NjY5NDIy",
+  "name": "CI",
+  "path": ".github/workflows/main.yml",
+  "state": "active",
+  "created_at": "2021-01-03T18:08:45.000Z",
+  "updated_at": "2021-04-25T05:07:11.000Z",
+  "url": "https://api.github.com/repos/nephelaiio/ansible-role-metricbeat/actions/workflows/4669422",
+  "html_url": "https://github.com/nephelaiio/ansible-role-metricbeat/blob/master/.github/workflows/main.yml",
+  "badge_url": "https://github.com/nephelaiio/ansible-role-metricbeat/workflows/CI/badge.svg"
+}

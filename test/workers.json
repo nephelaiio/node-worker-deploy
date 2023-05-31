@@ -1,0 +1,38 @@
+{
+  "result": [
+    {
+      "created_on": "2023-05-14T05:20:18.72652Z",
+      "modified_on": "2023-05-14T05:30:25.475475Z",
+      "id": "worker-github-actions",
+      "tag": "a44ba454dbd14261baf2ea5be93a109f",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "etag": "bfac800b797b8625124f4a6b4c3ae98dfe66425404f07bf5754ad183f168e92c",
+      "handlers": ["scheduled", "handleRequest"],
+      "last_deployed_from": "wrangler",
+      "compatibility_date": "2023-04-28",
+      "usage_model": "unbound",
+      "routes": null
+    },
+    {
+      "created_on": "2023-05-14T05:23:31.938764Z",
+      "modified_on": "2023-05-14T05:23:31.938764Z",
+      "id": "worker-github-actions-deploy",
+      "tag": "7923717070024065b2d687cb992e1a91",
+      "tags": [],
+      "deployment_id": "",
+      "tail_consumers": null,
+      "logpush": false,
+      "etag": "1e464f7bb2a09527344e738ad7f2729d35ab470bf9408d10c76470a9662e98e9",
+      "handlers": ["fetch"],
+      "last_deployed_from": "wrangler",
+      "usage_model": "unbound",
+      "routes": null
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": []
+}
