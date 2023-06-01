@@ -1,5 +1,5 @@
 ---
-name: preview
+name: clean
 
 on:
   pull_request:
@@ -10,7 +10,6 @@ on:
 
 jobs:
   clean:
-    if: github.event.pull_request.type == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
