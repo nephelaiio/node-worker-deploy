@@ -20,4 +20,4 @@ jobs:
         run: npm run build --production
 
       - name: Run npx
-        run: ./dist/deploy.cjs -- --help
+        run: ./dist/deploy.cjs --help
