@@ -9,19 +9,19 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      string: ${{ steps.version.outputs.string }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Get package version
-        run: echo "string=$(jq -r .version < package.json)" >> "$GITHUB_OUTPUT"
+        run: echo "tag=$(jq -r .version < package.json)" >> "$GITHUB_OUTPUT"
         id: version
 
       - name: Debug target version
         run: echo $NPM_RELEASE
         env:
-          NPM_RELEASE: ${{ steps.version.outputs.string }}
+          NPM_RELEASE: ${{ steps.version.outputs.tag }}
 
   publish:
     runs-on: ubuntu-latest
@@ -44,6 +44,12 @@ jobs:
 
       - name: Build project
         run: npm run build --production
+
+      - name: Tag release
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ needs.version.outputs.tag }}
 
       - name: Publish package to NPM
         run: npm publish
