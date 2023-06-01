@@ -1,5 +1,5 @@
 {
-  "name": "node-worker-deploy",
+  "name": "@nephelaiio/worker-deploy",
   "type": "module",
   "version": "0.0.1",
   "description": "",
@@ -9,7 +9,7 @@
     "url": "https://github.com/nephelaiio/node-worker-deploy.git"
   },
   "bin": {
-    "node-worker-deploy": "./deploy.js"
+    "worker-deploy": "./deploy.js"
   },
   "scripts": {
     "test": "vitest run",
