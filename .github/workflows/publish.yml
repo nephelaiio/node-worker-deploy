@@ -1,18 +1,19 @@
 ---
 name: publish
 on:
-  push:
+  pull_request:
     branches:
       - master
 
 jobs:
-  build:
+  publish:
+    if: github.event.pull_request.type == 'closed'
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js
+      - name: Install NodeJS
         uses: actions/setup-node@v3
         with:
           node-version: 18
