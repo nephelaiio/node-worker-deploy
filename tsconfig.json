@@ -3,14 +3,14 @@
     "target": "es2021",
     "lib": ["es2021"],
 
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ES6",
+    "moduleResolution": "node10",
     "types": ["@cloudflare/workers-types"],
 
     "resolveJsonModule": true,
     "allowJs": false,
     "checkJs": false,
-    "outDir": "dist",
+    "outDir": "build",
     "isolatedModules": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
@@ -25,8 +25,8 @@
     "target": "ES2021",
     "files": true,
     "compilerOptions": {
-      "module": "NodeNext",
-      "moduleResolution": "NodeNext"
+      "module": "ES6",
+      "moduleResolution": "node10"
     }
   },
   "include": ["src/**/*.ts"],

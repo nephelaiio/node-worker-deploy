@@ -1,5 +1,5 @@
 ---
-name: test
+name: npx
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  test:
+  run:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -16,5 +16,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Build project
+        run: npm run build --production
+
+      - name: Run npx
+        run: ./dist/deploy.cjs --help

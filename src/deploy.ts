@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Command, Option } from 'commander';
 import { execSync } from 'child_process';
@@ -8,8 +8,8 @@ import git from 'isomorphic-git';
 import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
-import { logger, verbose, quiet, info } from './logger.js';
-import { getWorker, getSubdomain } from './cloudflare.js';
+import { logger, verbose, quiet, info } from './logger';
+import { getWorker, getSubdomain } from './cloudflare';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
@@ -29,7 +29,6 @@ function execute(
     logger.debug(`Executing '${cmd}'`);
     const output = execSync(cmd).toString();
     return output;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const { status } = error;
     logger.error(
