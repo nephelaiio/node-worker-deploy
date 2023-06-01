@@ -16,8 +16,8 @@
     "build": "webpack",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
     "format": "prettier --plugin-search-dir . --write .",
-    "deploy": "npm run build ; node --no-warnings ./dist/deploy.js deploy",
-    "delete": "npm run build ; node --no-warnings ./dist/deploy.js delete"
+    "deploy": "npm run build --production ; node --no-warnings ./dist/deploy.cjs deploy",
+    "delete": "npm run build --production ; node --no-warnings ./dist/deploy.cjs delete"
   },
   "author": "",
   "license": "ISC",
