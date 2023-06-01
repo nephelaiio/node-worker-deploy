@@ -12,7 +12,6 @@ const outputPath = `${outputDir}/${outputFile}`;
 
 export default {
   entry: './src/deploy.ts',
-  devtool: 'none',
   target: 'node',
   module: {
     rules: [

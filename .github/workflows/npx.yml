@@ -17,7 +17,7 @@ jobs:
         run: npm ci
 
       - name: Build project
-        run: npm run build
+        run: npm run build --production
 
       - name: Run npx
         run: ./dist/deploy.cjs -- --help
