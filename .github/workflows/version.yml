@@ -13,9 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Debug event info
-        run: cat $GITHUB_EVENT_PATH
-
       - name: Check if version has been updated
         id: check
         uses: EndBug/version-check@v2
