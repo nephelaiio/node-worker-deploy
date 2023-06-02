@@ -32,7 +32,7 @@ jobs:
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN
+              --secret GITHUB_TOKEN:GH_TOKEN \
               --name ${PROJECT/$OWNER\//}-${BRANCH}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -52,12 +52,15 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            npm run delete -- --verbose
+            npm run delete -- --verbose --name ${PROJECT/$OWNER\//}-${BRANCH}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
+          OWNER: ${{ vars.GITHUB_REPOSITORY_OWNER }}
+          PROJECT: ${{ vars.GITHUB_REPOSITORY }}
+          BRANCH: ${{ vars.GITHUB_HEAD_REF }}
         id: destroy
 
       - name: Test destroyed Cloudflare worker
@@ -86,13 +89,16 @@ jobs:
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN
+              --secret GITHUB_TOKEN:GH_TOKEN \
               --name ${PROJECT/$OWNER\//}-${BRANCH}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
+          OWNER: ${{ vars.GITHUB_REPOSITORY_OWNER }}
+          PROJECT: ${{ vars.GITHUB_REPOSITORY }}
+          BRANCH: ${{ vars.GITHUB_HEAD_REF }}
         id: redeploy
 
       - name: Test deployed Cloudflare worker
