@@ -58,7 +58,9 @@ jobs:
           retries=10;
           while [ $retries -gt 0 ]; do
               retries=$((retries - 1))
-              return_header=$(curl -sD- https://www.google.com | head -1);
+              output=${{ steps.deploy.outputs.stdout }}
+              url="${output//[$'\t\r\n ']}"
+              return_header=$(echo curl -sD- $url | head -1);
               return_code=$(echo "$return_headers" | awk '{print $2}');
               if [[ "$return_code" == "404" ]]; then
                   exit 0;
