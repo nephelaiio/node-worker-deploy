@@ -39,7 +39,7 @@ jobs:
 
       - name: Test deployed Cloudflare worker
         run: |
-          curl  -sD- ${{ steps.deploy.outputs.stdout }} --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors
+          curl  -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
 
       - name: Destroy
         uses: mathiasvr/command-output@v2.0.0
@@ -80,4 +80,4 @@ jobs:
 
       - name: Test deployed Cloudflare worker
         run: |
-          curl  -sD- ${{ steps.redeploy.outputs.stdout }} --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors
+          curl  -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.redeploy.outputs.stdout }}
