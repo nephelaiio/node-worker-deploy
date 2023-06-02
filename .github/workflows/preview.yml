@@ -57,13 +57,13 @@ jobs:
         run: >
           retries=10;
           while [ $retries -gt 0 ]; do
-              retries=$((retries - 1));
+              retries=$((retries - 1))
               return_header=$(curl -sD- https://www.google.com | head -1);
               return_code=$(echo "$return_headers" | awk '{print $2}');
               if [[ "$return_code" == "404" ]]; then
                   exit 0;
-              fi
-          done
+              fi;
+          done;
           exit 1;
 
       - name: Deploy Cloudflare Worker
