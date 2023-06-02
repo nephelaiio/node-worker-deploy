@@ -32,7 +32,7 @@ jobs:
             export owner="${{ vars.GITHUB_REPOSITORY_OWNER }}"; \
             export project="${{ vars.GITHUB_REPOSITORY }}"; \
             export branch="${{ vars.GITHUB_HEAD_REF }}"; \
-            export worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
+            export worker="${project/$owner\//}-${branch}"; \
             echo "owner=$owner"
             echo "project=$project"
             echo "brancht=$branch"
