@@ -29,10 +29,10 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            owner="${{ vars.GITHUB_REPOSITORY_OWNER }}"; \
-            project="${{ vars.GITHUB_REPOSITORY }}"; \
-            branch="${{ vars.GITHUB_HEAD_REF }}"; \
-            worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
+            export owner="${{ vars.GITHUB_REPOSITORY_OWNER }}"; \
+            export project="${{ vars.GITHUB_REPOSITORY }}"; \
+            export branch="${{ vars.GITHUB_HEAD_REF }}"; \
+            export worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
             echo "owner=$owner"
             echo "project=$project"
             echo "brancht=$branch"
