@@ -33,6 +33,9 @@ jobs:
             project="${{ vars.GITHUB_REPOSITORY }}"; \
             branch="${{ vars.GITHUB_HEAD_REF }}"; \
             worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
+            echo "owner=$owner"
+            echo "project=$project"
+            echo "brancht=$branch"
             echo Deploying worker "$worker"; \
             npm run deploy -- \
               --verbose \
