@@ -1,7 +1,5 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import TerserPlugin from 'terser-webpack-plugin';
-import JavaScriptObfuscator from 'webpack-obfuscator';
 import WebpackShellPluginNext from 'webpack-shell-plugin-next';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,10 +28,9 @@ export default {
     path: path.resolve(__dirname, outputDir)
   },
   optimization: {
-    minimizer: [new TerserPlugin()]
+    minimizer: []
   },
   plugins: [
-    new JavaScriptObfuscator(),
     new WebpackShellPluginNext({
       onBuildEnd: {
         scripts: [

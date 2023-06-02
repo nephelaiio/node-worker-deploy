@@ -13,10 +13,10 @@ import { getWorker, getSubdomain } from './cloudflare';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
-const cwd = process.cwd();
+const CWD = process.cwd();
 
-if (fs.existsSync(`${cwd}/.env`)) {
-  dotenv.config({ path: `${process.cwd()}/.env` });
+if (fs.existsSync(`${CWD}/.env`)) {
+  dotenv.config({ path: `${CWD}/.env` });
 }
 
 function execute(
@@ -113,11 +113,13 @@ async function checkWorkerSubdomain(
   }
 }
 
-function workerName(project: string, branch: string): string {
-  if (branch == 'main' || branch == 'master') {
-    return project;
+async function defaultWorkerName(): Promise<string> {
+  const _project = await project();
+  const _branch = await branch();
+  if (_branch == 'main' || _branch == 'master') {
+    return _project;
   } else {
-    return `${project}-${branch}`;
+    return `${_project}-${_branch}`;
   }
 }
 
@@ -130,13 +132,13 @@ async function workerURL(
   return `https://${name}.${domain}.workers.dev`;
 }
 
-async function main() {
-  const branch = await git.currentBranch({ fs, dir: cwd });
-  const origin = await git.getConfig({
+async function project(remote = ''): Promise<string> {
+  const gitRemote = await git.getConfig({
     fs,
-    dir: cwd,
+    dir: CWD,
     path: 'remote.origin.url'
   });
+  const origin = remote != '' ? remote : gitRemote;
   const repo = origin
     .replace('git@', '')
     .replace('https://', '')
@@ -144,11 +146,19 @@ async function main() {
     .replace(':', '/')
     .split('/')
     .slice(-2)
-    .join('/');
-  const project = repo.split('/').at(-1);
-  const asyncLogs = {
-    debug: [`Deploying project ${project}`, `Deploying branch ${branch}`]
-  };
+    .join('/')
+    .split('/')
+    .at(-1);
+  return repo;
+}
+
+async function branch(name = ''): Promise<string> {
+  const gitBranch = await git.currentBranch({ fs, dir: CWD });
+  const branch = name != '' ? name : gitBranch;
+  return `${branch}`;
+}
+
+async function main() {
   const program = new Command();
   const checks: Promise<void>[] = [];
   const collect = (value: string, previous: string[]) =>
@@ -171,14 +181,19 @@ async function main() {
     .addOption(
       new Option('-k, --insecure', 'disable ssl verification').default(false)
     )
-    .hook('preAction', (program, _) => {
+    .addOption(new Option('-n, --name <string>', 'worker name').default(''))
+    .hook('preAction', async (program, _) => {
       const isVerbose = program.opts()['verbose'];
       const isQuiet = program.opts()['quiet'];
       const isInsecure = program.opts()['insecure'];
-      if (isVerbose) verbose(asyncLogs);
-      if (isQuiet) quiet(asyncLogs);
-      if (!isQuiet && !isVerbose) info(asyncLogs);
+      const workerArg = program.opts()['name'];
+      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+      console.log(workerArg);
+      if (isVerbose) verbose();
+      if (isQuiet) quiet();
+      if (!isQuiet && !isVerbose) info();
       if (isInsecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+      logger.debug(`Deploying worker ${worker}`);
       logger.debug(`Validating deployment parameters`);
       checks.push(checkEnvironment());
     });
@@ -188,7 +203,9 @@ async function main() {
     .option('-s, --secret <string>', 'worker secret', collect, [])
     .option('-l, --literal <string>', 'worker literal', collect, [])
     .option('-v, --variable <string>', 'worker variable', collect, [])
-    .action((options) => {
+    .action(async (options) => {
+      const workerArg = program.opts()['name'];
+      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -222,7 +239,6 @@ async function main() {
         },
         {}
       );
-      const worker = workerName(project, `${branch}`);
       checks.push(checkSecrets(secretArgs));
       checks.push(checkVariables(varArgs));
       checks.push(checkWorkerSubdomain());
@@ -237,8 +253,10 @@ async function main() {
 
   program.command('delete').action((_) => {
     Promise.all(checks).then(async () => {
-      const worker = workerName(project, `${branch}`);
-      if (worker != project) {
+      const projectName = await project(program.opts()['remote']);
+      const workerArg = program.opts()['name'];
+      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+      if (worker != projectName) {
         const deployment = await getWorker(
           `${CLOUDFLARE_API_TOKEN}`,
           `${CLOUDFLARE_ACCOUNT_ID}`,

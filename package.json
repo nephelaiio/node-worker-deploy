@@ -43,7 +43,6 @@
     "dotenv": "^16.0.3",
     "isomorphic-git": "^1.23.0",
     "octokit": "^2.0.14",
-    "ts-node": "^10.9.1",
     "winston": "^3.9.0",
     "wrangler": "^3.0.1"
   }

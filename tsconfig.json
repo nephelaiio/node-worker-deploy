@@ -19,16 +19,6 @@
     "esModuleInterop": true,
     "noImplicitAny": false
   },
-  "ts-node": {
-    "transpileOnly": false,
-    "lib": ["ESNext"],
-    "target": "ES2021",
-    "files": true,
-    "compilerOptions": {
-      "module": "ES6",
-      "moduleResolution": "node10"
-    }
-  },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
 }

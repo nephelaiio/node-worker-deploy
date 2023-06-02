@@ -19,5 +19,5 @@ jobs:
       - name: Build project
         run: npm run build --production
 
-      - name: Run deploy script
+      - name: Test build artifact
         run: ./dist/deploy.cjs --help
