@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  deploy:
+  preview:
     if: github.event.pull_request.type != 'closed'
     runs-on: ubuntu-latest
     steps:
