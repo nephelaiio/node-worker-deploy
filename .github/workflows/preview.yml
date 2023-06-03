@@ -30,7 +30,6 @@ jobs:
         with:
           run: |
             export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
-            echo Deploying worker "$worker"; \
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
@@ -48,14 +47,13 @@ jobs:
 
       - name: Test deployed Cloudflare worker
         run: |
-          curl  -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
+          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
 
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
             export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
-            echo Deploying worker "$worker"; \
             npm run delete -- \
               --verbose \
               --literal GITHUB_APPLY:true \
