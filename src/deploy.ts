@@ -106,7 +106,7 @@ async function checkWorkerSubdomain(
   token = `${CLOUDFLARE_API_TOKEN}`,
   account = `${CLOUDFLARE_ACCOUNT_ID}`
 ) {
-  const domain = getSubdomain(token, account);
+  const domain = await getSubdomain(token, account);
   if (!domain) {
     logger.error('Cloudflare workers.dev subdomain must be set for account');
     process.exit(1);
@@ -126,9 +126,11 @@ async function defaultWorkerName(): Promise<string> {
 async function workerURL(
   name: string,
   token = `${CLOUDFLARE_API_TOKEN}`,
-  account = `${CLOUDFLARE_ACCOUNT_ID}`
+  account = `${CLOUDFLARE_ACCOUNT_ID}`,
+  subdomain = ''
 ): Promise<string> {
-  const domain = await getSubdomain(token, account);
+  const domain =
+    subdomain != '' ? subdomain : await getSubdomain(token, account);
   return `https://${name}.${domain}.workers.dev`;
 }
 
@@ -181,7 +183,9 @@ async function main() {
     .addOption(
       new Option('-k, --insecure', 'disable ssl verification').default(false)
     )
-    .addOption(new Option('-n, --name <string>', 'worker name').default(''))
+    .addOption(
+      new Option('-n, --name <string>', 'worker deployment name').default('')
+    )
     .hook('preAction', async (program, _) => {
       const isVerbose = program.opts()['verbose'];
       const isQuiet = program.opts()['quiet'];
@@ -203,6 +207,9 @@ async function main() {
     .option('-s, --secret <string>', 'worker secret', collect, [])
     .option('-l, --literal <string>', 'worker literal', collect, [])
     .option('-v, --variable <string>', 'worker variable', collect, [])
+    .addOption(
+      new Option('-d, --subdomain <string>', 'worker subdomain').default('')
+    )
     .action(async (options) => {
       const workerArg = program.opts()['name'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
@@ -241,11 +248,13 @@ async function main() {
       );
       checks.push(checkSecrets(secretArgs));
       checks.push(checkVariables(varArgs));
-      checks.push(checkWorkerSubdomain());
+      if (options.subdomain == '') {
+        checks.push(checkWorkerSubdomain());
+      }
       Promise.all(checks).then(() => {
         logger.info(`Deploying worker ${worker}`);
         deploy(worker, varArgs, literalArgs, secretArgs);
-        workerURL(worker).then((url) => {
+        workerURL(worker, subdomain).then((url) => {
           console.log(url);
         });
       });
