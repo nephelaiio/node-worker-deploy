@@ -168,7 +168,7 @@ async function main() {
     previous.concat([value]);
 
   program
-    .version('0.0.1', '--version', 'output the current version')
+    .version(__VERSION__, '--version', 'output the current version')
     .description('page deployment tool')
     .helpOption('-h, --help', 'output usage information')
     .addOption(

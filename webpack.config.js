@@ -1,12 +1,16 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import WebpackShellPluginNext from 'webpack-shell-plugin-next';
+import webpack from 'webpack';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const outputDir = 'dist';
 const outputFile = 'deploy.cjs';
 const outputPath = `${outputDir}/${outputFile}`;
+const project = JSON.parse(readFileSync(resolve('./package.json'), 'utf-8'));
 
 export default {
   entry: './src/deploy.ts',
@@ -31,6 +35,9 @@ export default {
     minimizer: []
   },
   plugins: [
+    new webpack.DefinePlugin({
+      __VERSION__: JSON.stringify(project.version)
+    }),
     new WebpackShellPluginNext({
       onBuildEnd: {
         scripts: [
