@@ -56,8 +56,6 @@ jobs:
             export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
             npm run delete -- \
               --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$worker"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
