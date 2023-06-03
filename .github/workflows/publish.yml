@@ -52,6 +52,6 @@ jobs:
           custom_tag: ${{ needs.version.outputs.tag }}
 
       - name: Publish package to NPM
-        run: npm publish
+        run: npm publish --verbose
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
