@@ -43,6 +43,20 @@ We welcome contributions to this project! To get started, fork the repository
 and create a new branch for your changes. When you're ready to submit your
 changes, create a pull request.
 
+Here's a list of planned tasks for the project:
+
+Project:
+
+- Add CI support for managing Github deployments
+
+Deployment:
+
+- Add support for fqdn configuration
+- Add support for running as a Github Action
+- Add support for email routing
+- Add support for deploying and linking Durable Objects
+- Add support for deploying, linking and initializing D1 DBs
+
 Before submitting a pull request, please ensure that your code follows our code
 style guidelines and that all tests pass. You can run tests with the command
 `npm test`.
