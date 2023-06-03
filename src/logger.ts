@@ -1,4 +1,4 @@
-import { createLogger, transports, format, config } from 'winston';
+import { createLogger, transports, format } from 'winston';
 
 const LOG_LEVELS = {
   debug: 'debug',
