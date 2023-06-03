@@ -51,7 +51,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ needs.version.outputs.tag }}
 
+      - name: Configure NPM access credentials
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+      - name: Configure GPR access credentials
+        run: npm config set //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish package to GPR
+        run: npm publish --verbose --registry https://npm.pkg.github.com
+
       - name: Publish package to NPM
-        run: npm publish --verbose
-        env:
-          NPM_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        run: npm publish --verbose --registry https://registry.npmjs.org/
