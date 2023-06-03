@@ -23,4 +23,15 @@ jobs:
 
       - name: Desttoy Cloudflare Worker
         run: |
-          npm run delete -- --verbose
+          export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
+          npm run delete -- \
+            --verbose \
+            --name "$worker"
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          WRANGLER_SEND_METRICS: false
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
