@@ -26,14 +26,16 @@ jobs:
         run: npm run build --production
 
       - name: Deploy Cloudflare Worker
-        run: |
-          export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
-          echo Deploying worker "$worker"; \
-          npm run deploy -- \
-            --verbose \
-            --literal GITHUB_APPLY:true \
-            --secret GITHUB_TOKEN:GH_TOKEN \
-            --name "$worker"
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
+            echo Deploying worker "$worker"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$worker"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
@@ -42,35 +44,32 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
-
-      - name: Fail
-        run: exit 1
+        id: deploy
 
       - name: Test deployed Cloudflare worker
         run: |
-          curl -sD- ${REPOSITORY/$OWNER\//}-${BRANCH} \
-            --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors
-        env:
-          OWNER: ${{ vars.GITHUB_REPOSITORY_OWNER }}
-          REPOSITORY: ${{ vars.GITHUB_REPOSITORY }}
-          BRANCH: ${{ vars.GITHUB_HEAD_REF }}
+          curl  -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
 
-      - name: Destroy
+      - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            owner="${{ vars.GITHUB_REPOSITORY_OWNER }}"; \
-            project="${{ vars.GITHUB_REPOSITORY }}"; \
-            branch="${{ vars.GITHUB_HEAD_REF }}"; \
-            worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
-            echo Deleting worker "$worker"; \
-            npm run delete -- --verbose --name "$worker"
+            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
+            echo Deploying worker "$worker"; \
+            npm run delete -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$worker"
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
-        id: destroy
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
+        id: deploy
 
       - name: Test destroyed Cloudflare worker
         run: >
@@ -95,10 +94,7 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            owner="${{ vars.GITHUB_REPOSITORY_OWNER }}"; \
-            project="${{ vars.GITHUB_REPOSITORY }}"; \
-            branch="${{ vars.GITHUB_HEAD_REF }}"; \
-            worker="${PROJECT/$OWNER\//}-${BRANCH}"; \
+            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
             echo Deploying worker "$worker"; \
             npm run deploy -- \
               --verbose \
@@ -110,8 +106,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           WRANGLER_SEND_METRICS: false
-        id: redeploy
-
-      - name: Test deployed Cloudflare worker
-        run: |
-          curl  -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.redeploy.outputs.stdout }}
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
+        id: deploy
