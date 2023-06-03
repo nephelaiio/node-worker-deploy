@@ -92,7 +92,7 @@ async function checkSecrets(secrets: string[]) {
 }
 
 async function checkVariables(variables: { [id: string]: string }) {
-  logger.debug('Checking enrironment variables');
+  logger.debug('Checking environment variables');
   Object.entries(variables).forEach(([_, v]) => {
     if (!process.env[v]) {
       logger.error(`Environment variable '${v}' must be set`);
@@ -125,9 +125,9 @@ async function defaultWorkerName(): Promise<string> {
 
 async function workerURL(
   name: string,
+  subdomain = '',
   token = `${CLOUDFLARE_API_TOKEN}`,
-  account = `${CLOUDFLARE_ACCOUNT_ID}`,
-  subdomain = ''
+  account = `${CLOUDFLARE_ACCOUNT_ID}`
 ): Promise<string> {
   const domain =
     subdomain != '' ? subdomain : await getSubdomain(token, account);
@@ -192,7 +192,6 @@ async function main() {
       const isInsecure = program.opts()['insecure'];
       const workerArg = program.opts()['name'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-      console.log(workerArg);
       if (isVerbose) verbose();
       if (isQuiet) quiet();
       if (!isQuiet && !isVerbose) info();
@@ -254,7 +253,7 @@ async function main() {
       Promise.all(checks).then(() => {
         logger.info(`Deploying worker ${worker}`);
         deploy(worker, varArgs, literalArgs, secretArgs);
-        workerURL(worker, subdomain).then((url) => {
+        workerURL(worker, options.subdomain).then((url) => {
           console.log(url);
         });
       });
