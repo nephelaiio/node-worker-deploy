@@ -69,7 +69,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
-        id: deploy
+        id: destroy
 
       - name: Test destroyed Cloudflare worker
         run: >
@@ -109,4 +109,4 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPOSITORY: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
-        id: deploy
+        id: redeploy
