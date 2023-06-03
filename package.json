@@ -1,7 +1,7 @@
 {
   "name": "@nephelaiio/worker-deploy",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "dist/deploy.cjs",
   "repository": {
@@ -16,8 +16,8 @@
     "build": "webpack",
     "lint": "prettier --plugin-search-dir . --check . && eslint .",
     "format": "prettier --plugin-search-dir . --write .",
-    "deploy": "npm run build ; node --no-warnings ./dist/deploy.js deploy",
-    "delete": "npm run build ; node --no-warnings ./dist/deploy.js delete"
+    "deploy": "node --no-warnings ./dist/deploy.cjs deploy",
+    "delete": "node --no-warnings ./dist/deploy.cjs delete"
   },
   "author": "",
   "license": "ISC",
@@ -43,7 +43,6 @@
     "dotenv": "^16.0.3",
     "isomorphic-git": "^1.23.0",
     "octokit": "^2.0.14",
-    "ts-node": "^10.9.1",
     "winston": "^3.9.0",
     "wrangler": "^3.0.1"
   }

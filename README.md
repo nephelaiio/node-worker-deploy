@@ -23,7 +23,9 @@ To install and deploy the Worker Github Actions project, follow these steps:
    npm run configure -- secret.gh_token <Cloudflare API token>
 ```
 
-5. Deploy the worker: `npm run deploy`
+5. Build the project: `npm run build`
+
+6. Deploy the worker: `npm run deploy`
 
 ## Usage
 
