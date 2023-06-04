@@ -11,6 +11,11 @@ import * as dotenv from 'dotenv';
 
 import { logger, verbose, quiet, info } from './logger';
 import { getWorker, getSubdomain } from './cloudflare';
+import {
+  listGithubDeployments,
+  createGithubDeployment,
+  cleanGithubDeployments
+} from './github';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN || null;
@@ -257,6 +262,19 @@ async function main() {
         workerURL(worker, options.subdomain).then((url) => {
           console.log(url);
         });
+        if (process.env['CI'] == 'true') {
+          const githubToken = `${process.env['GITHUB_TOKEN']}`;
+          const githubRepo = `${process.env['GITHUB_REPOSITORY']}`;
+          branch().then((branch) => {
+            listGithubDeployments(githubToken, githubRepo, branch).then(
+              (deployments) => {
+                deployments.forEach((deployment) => {
+                  logger.debug(JSON.stringify(deployment));
+                });
+              }
+            );
+          });
+        }
       });
     });
 
