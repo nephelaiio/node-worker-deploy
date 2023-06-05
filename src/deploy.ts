@@ -3,6 +3,7 @@
 
 import { Command, Option } from 'commander';
 import { execSync } from 'child_process';
+import { parse as parseTOML, stringify } from '@iarna/toml';
 
 import git from 'isomorphic-git';
 
@@ -10,7 +11,7 @@ import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 import { logger, verbose, quiet, info } from './logger';
-import { getWorker, getSubdomain } from './cloudflare';
+import { getWorker, getSubdomain, getZone, listRoutes } from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
@@ -47,24 +48,50 @@ async function deploy(
   name: string,
   variables: { [id: string]: string } = {},
   literals: { [id: string]: string } = {},
-  secrets: { [id: string]: string } = {}
+  secrets: { [id: string]: string } = {},
+  routes: string[] = []
 ): Promise<void> {
+  const token = `${CLOUDFLARE_API_TOKEN}`;
+  const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
   const varArgs = Object.entries(variables)
-    .map(([k, v]) => `${k}:${process.env[v]}`)
-    .reduce((x, y) => `${x} --var ${y}`, '');
+    .map(([k, v]) => `--var ${k}:${process.env[v]}`)
+    .join(' ');
   const literalArgs = Object.entries(literals)
-    .map(([k, v]) => `${k}:${v}`)
-    .reduce((x, y) => `${x} --var ${y}`, '');
-  const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
-  const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
-  const publishScript = `${publishCmd} -- ${publishArgs}`;
-  const publishOutput = cli(publishScript);
-  const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
-  const secretCmd = `npm exec wrangler secret put -- --name ${name}`;
-  Object.entries(secrets)
-    .map(([k, v]) => `echo ${process.env[v]} | ${secretCmd} ${k}`)
-    .forEach((s) => cli(s));
-  logger.debug(`Publish ID: ${publishId}`);
+    .map(([k, v]) => `--var ${k}:${v}`)
+    .join(' ');
+  const routeData = await Promise.all(
+    routes.map(async (route) => {
+      const pattern = route;
+      const fqdn = route.split('/')[0];
+      const zone = fqdn.split('.').slice(-2).join('.');
+      const zoneData = await getZone(token, accountId, zone);
+      const zone_id = zoneData.id;
+      return { pattern, zone_id };
+    })
+  );
+  const configTOML = fs.readFileSync(`${CWD}/wrangler.toml`).toString();
+  const config = parseTOML(configTOML);
+  try {
+    const configRoutes = (config.routes || []) as {
+      pattern: string;
+      zone_id: any;
+    }[];
+    const publishRoutes = [...routeData, ...configRoutes];
+    const currentRoutes = await listRoutes(token, accountId);
+    process.exit(1);
+    const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
+    const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
+    const publishScript = `${publishCmd} -- ${publishArgs}`;
+    const publishOutput = cli(publishScript.trim());
+    const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
+    const secretCmd = `npm exec wrangler secret put -- --name ${name}`;
+    Object.entries(secrets)
+      .map(([k, v]) => `echo ${process.env[v]} | ${secretCmd} ${k}`)
+      .forEach((s) => cli(s));
+    logger.debug(`Publish ID: ${publishId}`);
+  } finally {
+    fs.writeFileSync(`${CWD}/wrangler.toml`, stringify(config));
+  }
 }
 
 async function checkEnvironment() {
@@ -205,9 +232,10 @@ async function main() {
 
   program
     .command('deploy')
-    .option('-s, --secret <string>', 'worker secret', collect, [])
-    .option('-l, --literal <string>', 'worker literal', collect, [])
-    .option('-v, --variable <string>', 'worker variable', collect, [])
+    .option('-s, --secret <string>', 'worker secret [list]', collect, [])
+    .option('-l, --literal <string>', 'worker literal [list]', collect, [])
+    .option('-v, --variable <string>', 'worker variable (list)', collect, [])
+    .option('-r, --route <fqdn>', 'worker route [list]', collect, [])
     .addOption(
       new Option('-d, --subdomain <string>', 'worker subdomain').default('')
     )
@@ -254,7 +282,12 @@ async function main() {
       }
       Promise.all(checks).then(async () => {
         logger.info(`Deploying worker ${worker}`);
-        deploy(worker, varArgs, literalArgs, secretArgs);
+        try {
+          await deploy(worker, varArgs, literalArgs, secretArgs, options.route);
+        } catch (e) {
+          logger.error('Error deploying worker. Aborting');
+          process.exit(1);
+        }
         const url = await workerURL(worker, options.subdomain);
         if (process.env['GITHUB_ACTIONS'] == 'true') {
           const githubToken = process.env['GITHUB_TOKEN'];

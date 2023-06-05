@@ -105,4 +105,71 @@ async function getDeployments(
   return null;
 }
 
-export { listWorkers, getWorker, getDeployments, getSubdomain };
+async function getZone(
+  token: string,
+  account: string,
+  zone: string
+): Promise<any> {
+  logger.debug(`Fetching zone data for domain '${zone}'`);
+  const zoneQuery = await cloudflareAPI(
+    token,
+    `/zones?account.id=${account}&name=${zone}`
+  );
+  const zones = zoneQuery.result;
+  if (zones) {
+    zone = zones[0];
+    logger.debug('Found zone record ${JSON.stringify(zone)}');
+    return zone;
+  } else {
+    logger.debug('No zones matched query');
+    return null;
+  }
+}
+
+async function listZones(token: string, account: string): Promise<any> {
+  logger.debug(`Listing zones for account '${account}'`);
+  const zoneQuery = await cloudflareAPI(token, '/zones');
+  const zones = zoneQuery.result;
+  if (zones) {
+    logger.debug(`Found ${zones.length} zone records`);
+    return zones;
+  } else {
+    logger.debug('No zones found');
+    return [];
+  }
+}
+
+async function listRoutes(token: string, account: string): Promise<any> {
+  logger.debug(`Fetching account worker routes`);
+  const zoneRoutes = async (zone: string) => {
+    logger.debug(`Fetching routes for zone '${zone}'`);
+    const routeQuery = await cloudflareAPI(
+      token,
+      `/zones/${zone}/workers/routes`
+    );
+    const routes = routeQuery.result;
+    return routes;
+  };
+  const zones = await listZones(token, account);
+  const routes = await Promise.all(zones.map((x: any) => x.id).map(zoneRoutes));
+  if (routes) {
+    routes.map((x) => {
+      if (x.length > 0) {
+        logger.debug(`Found route ${JSON.stringify(x)}`);
+      }
+    });
+    return routes;
+  } else {
+    logger.debug('No routes found');
+    return [];
+  }
+}
+
+export {
+  listWorkers,
+  getWorker,
+  getDeployments,
+  getSubdomain,
+  getZone,
+  listRoutes
+};
