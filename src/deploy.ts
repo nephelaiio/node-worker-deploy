@@ -256,7 +256,7 @@ async function main() {
         logger.info(`Deploying worker ${worker}`);
         deploy(worker, varArgs, literalArgs, secretArgs);
         const url = await workerURL(worker, options.subdomain);
-        if (process.env['CI'] == 'true') {
+        if (process.env['GITHUB_ACTIONS'] == 'true') {
           const githubToken = process.env['GITHUB_TOKEN'];
           const githubRepo = process.env['GITHUB_REPOSITORY'];
           if (githubToken) {
@@ -303,7 +303,7 @@ async function main() {
         } else {
           logger.debug(`Worker ${worker} not found`);
         }
-        if (process.env['CI'] == 'true') {
+        if (process.env['GITHUB_ACTIONS'] == 'true') {
           const githubToken = process.env['GITHUB_TOKEN'];
           const githubRepo = process.env['GITHUB_REPOSITORY'];
           if (githubToken) {
