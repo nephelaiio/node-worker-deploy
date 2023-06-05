@@ -45,12 +45,6 @@ changes, create a pull request.
 
 Here's a list of planned tasks for the project:
 
-Project:
-
-- Add CI support for managing Github deployments
-
-Deployment:
-
 - Add support for fqdn configuration
 - Add support for running as a Github Action
 - Add support for email routing
