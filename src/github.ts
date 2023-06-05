@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { logger } from './logger';
-import { githubAPI } from './api';
 import { Octokit } from 'octokit';
 
 async function listGithubDeployments(
@@ -16,11 +17,10 @@ async function listGithubDeployments(
     `GET /repos/${repository}/deployments?${query}`
   );
   const deployments = deploymentRecords || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sortedDeployments = deployments.sort((x: any, y: any) => {
     const xDate = new Date(x.updated_at);
     const yDate = new Date(y.updated_at);
-    xDate <= yDate;
+    return xDate.getDate() - yDate.getDate();
   });
   logger.debug(
     `Found ${sortedDeployments.length} deployments for repository '${repository}', environment '${environment}'`
@@ -47,7 +47,7 @@ async function initGithubDeployment(
   } else {
     const octokit = new Octokit({ auth: githubToken });
     const deployment: any = await octokit.request(
-      `POST repos/${repository}/deployments`,
+      `POST /repos/${repository}/deployments`,
       {
         ref: environment,
         environment: environment,
@@ -61,7 +61,7 @@ async function initGithubDeployment(
         `Unable to create deployment for repository ${repository}`
       );
     } else {
-      logger.debug(`Created deployment with id ${deployment.id}`);
+      logger.debug(`Created deployment ${JSON.stringify(deployment)}`);
     }
     return deployment.id;
   }
@@ -77,11 +77,14 @@ async function createGithubDeployment(
     `Creating Github deployment for repository '${repository}', environment '${environment}'`
   );
   const octokit = new Octokit({ auth: githubToken });
-  await octokit.request(`repos/${repository}/environments/${environment}`, {
-    wait_timer: 0,
-    reviewers: null,
-    deployment_branch_policy: null
-  });
+  await octokit.request(
+    `PUT /repos/${repository}/environments/${environment}`,
+    {
+      wait_timer: 0,
+      reviewers: null,
+      deployment_branch_policy: null
+    }
+  );
   const deploymentId = await initGithubDeployment(
     `${githubToken}`,
     repository,
@@ -91,8 +94,8 @@ async function createGithubDeployment(
   logger.debug(
     `Creating Github deployment status for deployment '${deploymentId}'`
   );
-  const deploymentStatus = await octokit.request(
-    `POST repos/${repository}/deployments/${deploymentId}/statuses`,
+  const deploymentStatus: any = await octokit.request(
+    `POST /repos/${repository}/deployments/${deploymentId}/statuses`,
     {
       state: 'success',
       environment_url: url,
@@ -107,7 +110,9 @@ async function createGithubDeployment(
       `Unable to create deployment status for deployment ${deploymentId}`
     );
   } else {
-    logger.debug(`Created deployment status with id '${deploymentStatus.id}'`);
+    logger.debug(
+      `Created deployment status with id '${deploymentStatus.data.id}'`
+    );
   }
 }
 
@@ -115,10 +120,9 @@ async function cleanGithubDeployments(
   githubToken: string,
   repository: string,
   environment: string,
-  maxDeployments: number = 1
+  keepDeployments = 0
 ): Promise<void> {
   const octokit = new Octokit({ auth: githubToken });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allDeployments = await listGithubDeployments(
     githubToken,
     repository,
@@ -127,14 +131,12 @@ async function cleanGithubDeployments(
   logger.debug(
     `Found ${allDeployments.length} deployments for environment '${environment}'`
   );
-  if (allDeployments.length > maxDeployments) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (allDeployments.length > keepDeployments) {
     const extraDeployments = allDeployments.slice(
       0,
-      allDeployments.length - maxDeployments
+      allDeployments.length - keepDeployments
     );
     logger.debug(`Removing ${extraDeployments.length} deployments`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const extraDeployment of extraDeployments) {
       const deployment: any = extraDeployment;
       logger.debug(
@@ -142,11 +144,11 @@ async function cleanGithubDeployments(
       );
       const inactive = { state: 'inactive' };
       await octokit.request(
-        `POST repos/${repository}/deployments/${deployment.id}/statuses`,
+        `POST /repos/${repository}/deployments/${deployment.id}/statuses`,
         inactive
       );
       await octokit.request(
-        `DELETE repos/${repository}/deployments/${deployment.id}`
+        `DELETE /repos/${repository}/deployments/${deployment.id}`
       );
       logger.debug(`Deployment '${deployment.id}' removed`);
     }
