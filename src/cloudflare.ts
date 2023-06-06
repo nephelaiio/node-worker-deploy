@@ -3,6 +3,10 @@
 import { logger } from './logger';
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
+type Route = {
+  pattern: string;
+  zone_id: any;
+};
 
 const cloudflareAPI = async (
   token: string,
@@ -166,6 +170,7 @@ async function listRoutes(token: string, account: string): Promise<any> {
 }
 
 export {
+  Route,
   listWorkers,
   getWorker,
   getDeployments,

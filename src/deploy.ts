@@ -11,7 +11,13 @@ import * as fs from 'fs';
 import * as dotenv from 'dotenv';
 
 import { logger, verbose, quiet, info } from './logger';
-import { getWorker, getSubdomain, getZone, listRoutes } from './cloudflare';
+import {
+  Route,
+  getWorker,
+  getSubdomain,
+  getZone,
+  listRoutes
+} from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null;
@@ -59,7 +65,7 @@ async function deploy(
   const literalArgs = Object.entries(literals)
     .map(([k, v]) => `--var ${k}:${v}`)
     .join(' ');
-  const routeData = await Promise.all(
+  const routeData: Route[] = await Promise.all(
     routes.map(async (route) => {
       const pattern = route;
       const fqdn = route.split('/')[0];
@@ -72,13 +78,12 @@ async function deploy(
   const configTOML = fs.readFileSync(`${CWD}/wrangler.toml`).toString();
   const config = parseTOML(configTOML);
   try {
-    const configRoutes = (config.routes || []) as {
-      pattern: string;
-      zone_id: any;
-    }[];
+    const configRoutes = (config.routes || []) as Route[];
     const publishRoutes = [...routeData, ...configRoutes];
     const currentRoutes = await listRoutes(token, accountId);
-    process.exit(1);
+    const addedRoutes = publishRoutes.filter(
+      (x) => !currentRoutes.some((y: Route) => x.pattern == y.pattern)
+    );
     const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
     const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
     const publishScript = `${publishCmd} -- ${publishArgs}`;
