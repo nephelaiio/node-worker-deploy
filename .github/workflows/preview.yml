@@ -126,7 +126,21 @@ jobs:
               --name "$WORKER";
 
       - name: Test custom domain resolution
-        run: "dig +short $FQDN @1.1.1.1 && exit 1 || echo custom domain removed successfully"
+        run: |
+          RETRIES=6; \
+          SLEEP=30; \
+          while [[ $RETRIES > 0 ]]; do \
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
+            if [ -z "$address" ]; then \
+              echo "dns query for record $FQDN returned NXDOMAIN"; \
+              exit 0; \
+            else \
+              echo "dns query for record $FQDN returned $address. retrying ..."; \
+              sleep $SLEEP; \
+            fi; \
+          done; \
+          echo "dns record $FQDN has not been removed"; \
+          exit 1;
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned
