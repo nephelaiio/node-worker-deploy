@@ -59,7 +59,6 @@ jobs:
             npm run delete -- \
               --verbose \
               --name "$WORKER"
-        id: destroy
 
       - name: Test destroyed Cloudflare worker
         run: >
@@ -90,7 +89,6 @@ jobs:
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER"
-        id: redeploy
 
       - name: Set worker fqdn envvar
         run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
@@ -160,6 +158,14 @@ jobs:
           echo "dns record $FQDN is present"; \
           exit 1;
 
+      - name: Delete Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run delete -- \
+              --verbose \
+              --name "$WORKER"
+
       - name: Install JQ
         run: |
           sudo apt-get install -y jq
@@ -167,12 +173,13 @@ jobs:
       - name: Query Cloudflare zone data
         run: |
           CUSTOM_DOMAIN_ID=$(curl --silent --request GET --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name${CUSTOM_DOMAIN} \
+            https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name=${CUSTOM_DOMAIN} \
             | jq '.result[0].id'); \
           echo CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID} >> $GITHUB_ENV
 
       - name: Create origin record for custom domain record
-        run: echo $CUSTOM_DOMAIN_ID
+        run: |
+          echo $CUSTOM_DOMAIN_ID
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned

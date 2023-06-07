@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-function */
 
 import { logger } from './logger';
 
@@ -46,30 +47,39 @@ const cloudflareAPI = async (
       });
       if (response.ok) {
         logger.debug(`Got response ${response.status} for ${uri}`);
-        return response;
+        return method != 'DELETE' ? response : null;
       } else {
         logger.error(`Unexpected response ${response.status} for ${uri}`);
         throw new Error(`Unexpected response ${response.status} for ${uri}`);
       }
     }
   }
-  const data: any = (await fetchData(uri)).json();
-  const isPaged = data.result_info && data.result_info.total_pages > 1;
-  if (method == 'GET' && isPaged) {
-    if (data.result_info.total_pages > 1) {
-      const pages = data.result_info.total_pages;
-      const range = [...Array(pages - 1).keys()].map((x) => x + 1);
-      const pageData = range
-        .map(async (page) => {
-          logger.debug(`Fetching ${uri}`);
-          const pageResult = await fetchData(`${uri}?page=${page}`);
-          return pageResult.json();
-        })
-        .reduce(async (data, page) => data.concat(await page), data.result);
-      return pageData;
+  const response = await fetchData(uri);
+  if (response && method == 'GET') {
+    const data: any = response.json();
+    const isPaged = data.result_info && data.result_info.total_pages > 1;
+    if (isPaged) {
+      if (data.result_info.total_pages > 1) {
+        const pages = data.result_info.total_pages;
+        const range = [...Array(pages - 1).keys()].map((x) => x + 1);
+        const pageData = range
+          .map(async (page) => {
+            logger.debug(`Fetching ${uri}`);
+            const pageResult = await fetchData(`${uri}?page=${page}`);
+            if (pageResult) {
+              return pageResult.json();
+            } else {
+              return {};
+            }
+          })
+          .reduce(async (data, page) => data.concat(await page), data.result);
+        return pageData;
+      }
+    } else {
+      return data;
     }
   } else {
-    return data;
+    return {};
   }
 };
 
@@ -121,7 +131,7 @@ async function createOriginlessRecord(
     logger.debug(`Creating originless record ${record}`);
     await cloudflareAPI(
       token,
-      `/zones/${zone.id}/dns_records/${records[0].id}`,
+      `/zones/${zone.id}/dns_records/${record}`,
       'POST',
       {
         name: record,
@@ -343,24 +353,17 @@ async function deleteRoute(
   }
   if (domainRoutes.length == 0) {
     const domains = await listWorkerDomains(token, account);
-    await Promise.all(
-      domains
-        .filter((x: any) => x.zone_id == zone.id)
-        .map(async (domain: any) => {
-          try {
-            logger.debug(`Detaching domain ${domain.zone_name} from workers`);
-            await cloudflareAPI(
-              token,
-              `/accounts/${account}/workers/domains/${domain.id}`,
-              'DELETE'
-            );
-          } catch (e) {
-            logger.debug(
-              `Unexpected response detaching domain ${domain.zone_name}. Skipping`
-            );
-          }
-        })
-    );
+    const matchDomains = domains.filter((x: any) => x.zone_id == zone.id);
+    if (matchDomains.length > 0) {
+      const domain = matchDomains[0];
+      logger.debug(`Detaching domain ${domain.zone_name} from workers`);
+      await cloudflareAPI(
+        token,
+        `/accounts/${account}/workers/domains/${domain.id}`,
+        'DELETE'
+      );
+      logger.debug(`Detached domain ${domain.zone_name} from workers`);
+    }
   }
   return response.result;
 }
