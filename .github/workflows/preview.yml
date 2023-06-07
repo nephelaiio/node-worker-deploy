@@ -111,7 +111,7 @@ jobs:
 
       - name: Test custom domain endpoint
         run: |
-          ADDRESS="dig +short $FQDN @1.1.1.1 | head -1"; \
+          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)" \
           curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS"
 
       - name: Remove custom domain from Cloudflare worker
