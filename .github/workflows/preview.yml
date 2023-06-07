@@ -16,6 +16,7 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       REPOSITORY: ${{ github.repository }}
       BRANCH: ${{ github.head_ref }}
+      CUSTOM_DOMAIN: nephelai.io
     if: github.event.pull_request.type != 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -92,7 +93,24 @@ jobs:
         id: redeploy
 
       - name: Set worker fqdn envvar
-        run: echo "FQDN=${WORKER}-test.nephelai.io" >> $GITHUB_ENV
+        run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Test custom domain resolution
+        run: |
+          RETRIES=6; \
+          SLEEP=30; \
+          while [[ $RETRIES > 0 ]]; do \
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
+            if [ -z "$address" ]; then \
+              echo "dns query for record $FQDN returned NXDOMAIN"; \
+              exit 0; \
+            else \
+              echo "dns query for record $FQDN returned $address. retrying ..."; \
+              sleep $SLEEP; \
+            fi; \
+          done; \
+          echo "dns record $FQDN is present"; \
+          exit 1;
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
@@ -139,8 +157,22 @@ jobs:
               sleep $SLEEP; \
             fi; \
           done; \
-          echo "dns record $FQDN has not been removed"; \
+          echo "dns record $FQDN is present"; \
           exit 1;
+
+      - name: Install JQ
+        run: |
+          sudo apt-get install -y jq
+
+      - name: Query Cloudflare zone data
+        run: |
+          CUSTOM_DOMAIN_ID=$(curl --silent --request GET  --url --header "Authorization: Bearer $CF_API_TOKEN" \
+            https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name${CUSTOM_DOMAIN} \
+            | jq '.result[0].id'); \
+          echo CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID} >> $GITHUB_ENV
+
+      - name: Create origin record for custom domain record
+        run: echo $CUSTOM_DOMAIN_ID
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned
