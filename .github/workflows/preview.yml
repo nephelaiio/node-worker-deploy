@@ -8,6 +8,14 @@ on:
 
 jobs:
   preview:
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      WRANGLER_SEND_METRICS: false
+      OWNER: ${{ github.repository_owner }}
+      REPOSITORY: ${{ github.repository }}
+      BRANCH: ${{ github.head_ref }}
     if: github.event.pull_request.type != 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -25,24 +33,18 @@ jobs:
       - name: Build project
         run: npm run build --production
 
+      - name: Set worker name envvar
+        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}" >> $GITHUB_ENV
+
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$worker"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          WRANGLER_SEND_METRICS: false
-          OWNER: ${{ github.repository_owner }}
-          REPOSITORY: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref }}
+              --name "$WORKER"
         id: deploy
 
       - name: Test deployed Cloudflare worker
@@ -53,18 +55,9 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
             npm run delete -- \
               --verbose \
-              --name "$worker"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          WRANGLER_SEND_METRICS: false
-          OWNER: ${{ github.repository_owner }}
-          REPOSITORY: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref }}
+              --name "$WORKER"
         id: destroy
 
       - name: Test destroyed Cloudflare worker
@@ -90,19 +83,50 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            export worker="${REPOSITORY/$OWNER\//}-${BRANCH}"; \
-            echo Deploying worker "$worker"; \
+            echo Deploying worker "$WORKER"; \
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$worker"
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          WRANGLER_SEND_METRICS: false
-          OWNER: ${{ github.repository_owner }}
-          REPOSITORY: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref }}
+              --name "$WORKER"
         id: redeploy
+
+      - name: Set worker fqdn envvar
+        run: echo "FQDN=${WORKER}-test.nephelai.io" >> $GITHUB_ENV
+
+      - name: Update Cloudflare worker with custom domain
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
+              --route "$FQDN/*"
+
+      - name: Test custom domain resolution
+        run: "dig +short $FQDN @1.1.1.1"
+
+      - name: Test custom domain endpoint
+        run: |
+          ADDRESS="dig +short $FQDN @1.1.1.1 | head -1"; \
+          curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS"
+
+      - name: Remove custom domain from Cloudflare worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER";
+
+      - name: Test custom domain resolution
+        run: "dig +short $FQDN @1.1.1.1 && exit 1 || echo custom domain removed successfully"
+
+      - name: Record pending tasks
+        run: echo Add test to ensure origin records are not pruned

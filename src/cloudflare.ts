@@ -2,10 +2,14 @@
 
 import { logger } from './logger';
 
+const ORIGINLESS_TYPE = 'AAAA';
+const ORIGINLESS_CONTENT = '100::';
+
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
-type Route = {
+export type Route = {
   pattern: string;
   zone_id: any;
+  id?: string;
 };
 
 const cloudflareAPI = async (
@@ -19,19 +23,34 @@ const cloudflareAPI = async (
     Authorization: `Bearer ${token}`
   };
   const uri = `https://api.cloudflare.com/client/v4${path}`;
-  logger.debug(`Fetching ${uri}`);
+  logger.debug(`Fetching ${method} ${uri}`);
   async function fetchData(url: string) {
     if (method == 'GET' || method == 'HEAD' || body == null) {
-      return await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers
       });
+      if (response.ok) {
+        logger.debug(`Got response ${response.status} for ${method} ${uri}`);
+        return response;
+      } else {
+        const error = `Unexpected response ${response.status} for ${method} ${uri}`;
+        logger.error(error);
+        throw new Error(error);
+      }
     } else {
-      return await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers,
         body: JSON.stringify(body)
       });
+      if (response.ok) {
+        logger.debug(`Got response ${response.status} for ${uri}`);
+        return response;
+      } else {
+        logger.error(`Unexpected response ${response.status} for ${uri}`);
+        throw new Error(`Unexpected response ${response.status} for ${uri}`);
+      }
     }
   }
   const data: any = (await fetchData(uri)).json();
@@ -53,6 +72,87 @@ const cloudflareAPI = async (
     return data;
   }
 };
+
+async function isOriginlessRecord(
+  token: string,
+  account: string,
+  record: any
+): Promise<any> {
+  const domain = record.split('.').slice(-2).join('.');
+  const zone = await getZone(token, account, domain);
+  logger.debug(`Querying data for record '${record}'`);
+  const request = await cloudflareAPI(
+    token,
+    `/zones/${zone.id}/dns_records?name=${record}`
+  );
+  const records = request.result;
+  if (records.length == 0) {
+    logger.debug(`No records found, marking record '${record}' as origin`);
+    return null;
+  } else {
+    const matchRecord = records[0];
+    const isSingleRecord = records.length == 1;
+    const isMatchType = matchRecord.type == ORIGINLESS_TYPE;
+    const isMatchContent = matchRecord.content == ORIGINLESS_CONTENT;
+    if (isSingleRecord && isMatchType && isMatchContent) {
+      logger.debug(`Marking '${record}' as originless`);
+      return matchRecord;
+    } else {
+      logger.debug(`Marking '${record}' as origin`);
+      return null;
+    }
+  }
+}
+
+async function createOriginlessRecord(
+  token: string,
+  account: string,
+  record: any
+): Promise<any> {
+  const domain = record.split('.').slice(-2).join('.');
+  const zone = await getZone(token, account, domain);
+  logger.debug(`Querying data for record '${record}'`);
+  const request = await cloudflareAPI(
+    token,
+    `/zones/${zone.id}/dns_records?name=${record}`
+  );
+  const records = request.result;
+  if (records.length == 0) {
+    logger.debug(`Creating originless record ${record}`);
+    await cloudflareAPI(
+      token,
+      `/zones/${zone.id}/dns_records/${records[0].id}`,
+      'POST',
+      {
+        name: record,
+        content: ORIGINLESS_CONTENT,
+        type: ORIGINLESS_TYPE,
+        proxied: true
+      }
+    );
+    logger.debug(`Created originless record ${record}`);
+  }
+}
+
+async function deleteOriginlessRecord(
+  token: string,
+  account: string,
+  record: any
+): Promise<any> {
+  const domain = record.split('.').slice(-2).join('.');
+  const zone = await getZone(token, account, domain);
+  logger.debug(`Deleting originless record ${record}`);
+  const originlessRecord = await isOriginlessRecord(token, account, record);
+  if (originlessRecord) {
+    await cloudflareAPI(
+      token,
+      `/zones/${zone.id}/dns_records/${originlessRecord.id}`,
+      'DELETE'
+    );
+  } else {
+    logger.debug('Origin record detected, skipping');
+  }
+}
 
 async function listWorkers(token: string, account: string): Promise<any> {
   const workers = await cloudflareAPI(
@@ -76,7 +176,10 @@ async function getWorker(
   }
 }
 
-async function getSubdomain(token: string, account: string): Promise<any> {
+async function getWorkerSubdomain(
+  token: string,
+  account: string
+): Promise<any> {
   const subdomainQuery = await cloudflareAPI(
     token,
     `/accounts/${account}/workers/subdomain`
@@ -121,60 +224,154 @@ async function getZone(
   );
   const zones = zoneQuery.result;
   if (zones) {
-    zone = zones[0];
-    logger.debug('Found zone record ${JSON.stringify(zone)}');
-    return zone;
+    const zoneData = zones[0];
+    logger.debug(`Found record for zone ${zone} with id ${zoneData.id}`);
+    return zoneData;
   } else {
     logger.debug('No zones matched query');
     return null;
   }
 }
 
-async function listZones(token: string, account: string): Promise<any> {
-  logger.debug(`Listing zones for account '${account}'`);
-  const zoneQuery = await cloudflareAPI(token, '/zones');
-  const zones = zoneQuery.result;
-  if (zones) {
-    logger.debug(`Found ${zones.length} zone records`);
-    return zones;
+async function listWorkerDomains(token: string, account: string): Promise<any> {
+  logger.debug(`Listing worker domains for account '${account}'`);
+  const request = await cloudflareAPI(
+    token,
+    `/accounts/${account}/workers/domains`
+  );
+  const domains = request.result;
+  if (domains) {
+    logger.debug(`Found ${domains.length} worker domains`);
+    return domains;
   } else {
-    logger.debug('No zones found');
+    logger.debug('No worker domains found');
     return [];
   }
 }
 
-async function listRoutes(token: string, account: string): Promise<any> {
+async function listWorkerDomainRoutes(
+  token: string,
+  domain: string
+): Promise<any> {
+  logger.debug(`Fetching routes for zone '${domain}'`);
+  const routeQuery = await cloudflareAPI(
+    token,
+    `/zones/${domain}/workers/routes`
+  );
+  const routes = routeQuery.result;
+  logger.debug(`Found '${routes.length}' matching routes`);
+  return routes;
+}
+
+async function listWorkerRoutes(token: string, account: string): Promise<any> {
   logger.debug(`Fetching account worker routes`);
-  const zoneRoutes = async (zone: string) => {
-    logger.debug(`Fetching routes for zone '${zone}'`);
-    const routeQuery = await cloudflareAPI(
-      token,
-      `/zones/${zone}/workers/routes`
-    );
-    const routes = routeQuery.result;
-    return routes;
-  };
-  const zones = await listZones(token, account);
-  const routes = await Promise.all(zones.map((x: any) => x.id).map(zoneRoutes));
+  const domainRoutes = async (domain: any) =>
+    listWorkerDomainRoutes(token, domain);
+  const domains = await listWorkerDomains(token, account);
+  const routes = await Promise.all(
+    domains.map((x: any) => x.zone_id).map(domainRoutes)
+  );
   if (routes) {
-    routes.map((x) => {
-      if (x.length > 0) {
-        logger.debug(`Found route ${JSON.stringify(x)}`);
-      }
+    routes.flat().map((x) => {
+      logger.debug(`Found route ${x.pattern}`);
     });
-    return routes;
+    return routes.flat();
   } else {
     logger.debug('No routes found');
     return [];
   }
 }
 
+async function createRoute(
+  token: string,
+  account: string,
+  worker: string,
+  route: Route
+): Promise<any> {
+  const hostname = route.pattern.split('/')[0];
+  const domain = hostname.split('.').slice(-2).join('.');
+  const zone = await getZone(token, account, domain);
+  const domains = await listWorkerDomains(token, account);
+  if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
+    logger.debug(`Attaching ${worker} to domain ${domain}`);
+    await cloudflareAPI(token, `/accounts/${account}/workers/domains`, 'PUT', {
+      environment: 'production',
+      hostname,
+      service: worker,
+      zone_id: zone.id
+    });
+  }
+  await createOriginlessRecord(token, account, hostname);
+  const routes = await listWorkerRoutes(token, account);
+  if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
+    logger.debug(`Adding worker route for pattern ${route.pattern}`);
+    await cloudflareAPI(token, `/zones/${zone.id}/workers/routes`, 'POST', {
+      pattern: route.pattern,
+      script: worker
+    });
+    logger.debug(
+      `Worker route for pattern ${route.pattern} added successfully`
+    );
+  }
+}
+
+// destroy originless record if necessary
+async function deleteRoute(
+  token: string,
+  account: string,
+  route: Route
+): Promise<any> {
+  const hostname = route.pattern.split('/')[0];
+  const domain = hostname.split('.').slice(-2).join('.');
+  const zone = await getZone(token, account, domain);
+  logger.debug(`Deleting worker route for pattern ${route.pattern}`);
+  const response = await cloudflareAPI(
+    token,
+    `/zones/${zone.id}/workers/routes/${route.id}`,
+    'DELETE'
+  );
+  logger.debug(
+    `Worker route for pattern ${route.pattern} deleted successfully`
+  );
+  const domainRoutes = await listWorkerDomainRoutes(token, zone.id);
+  const matchingRoutes = domainRoutes.filter(
+    (x: any) => x.pattern.split('/')[0] == hostname
+  );
+  if (matchingRoutes.length == 0) {
+    logger.debug(`Deleting originless record for ${hostname}`);
+    await deleteOriginlessRecord(token, account, hostname);
+  }
+  if (domainRoutes.length == 0) {
+    const domains = await listWorkerDomains(token, account);
+    await Promise.all(
+      domains
+        .filter((x: any) => x.zone_id == zone.id)
+        .map(async (domain: any) => {
+          try {
+            logger.debug(`Detaching domain ${domain.zone_name} from workers`);
+            await cloudflareAPI(
+              token,
+              `/accounts/${account}/workers/domains/${domain.id}`,
+              'DELETE'
+            );
+          } catch (e) {
+            logger.debug(
+              `Unexpected response detaching domain ${domain.zone_name}. Skipping`
+            );
+          }
+        })
+    );
+  }
+  return response.result;
+}
+
 export {
-  Route,
   listWorkers,
   getWorker,
   getDeployments,
-  getSubdomain,
+  getWorkerSubdomain,
   getZone,
-  listRoutes
+  listWorkerRoutes,
+  createRoute,
+  deleteRoute
 };

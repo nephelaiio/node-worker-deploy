@@ -13,7 +13,7 @@ const outputPath = `${outputDir}/${outputFile}`;
 const project = JSON.parse(readFileSync(resolve('./package.json'), 'utf-8'));
 
 export default {
-  entry: './src/deploy.ts',
+  entry: './src/cli.ts',
   target: 'node',
   module: {
     rules: [
