@@ -166,9 +166,9 @@ jobs:
               --verbose \
               --name "$WORKER"
 
-      - name: Install JQ
+      - name: Install utilities
         run: |
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq httpie
 
       - name: Query Cloudflare zone data
         run: |
@@ -181,9 +181,9 @@ jobs:
       - name: Create origin record for custom domain record
         run: |
           API_URL="https://api.cloudflare.com/client/v4/zones/${CUSTOM_DOMAIN_ID}/dns_records"; \
-          echo "Issuing POST request to ${API_URL} to create zone record"
-          curl --silent --request POST --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API_URL" \
-          --data '{ "content": "1.1.1.1", "name": "${FQDN}", "type": "A", "proxied": true }'
+          echo "Issuing POST request to ${API_URL} to create zone record"; \
+          http POST "$API_URL" "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+          content="1.1.1.1" name="${FQDN}" type="A" proxied=true
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned
