@@ -40,11 +40,11 @@ jobs:
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            npm run deploy --
-              --verbose
-              --literal GITHUB_APPLY:true
-              --secret GITHUB_TOKEN:GH_TOKEN
+          run: |
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER"
         id: deploy
 
@@ -55,9 +55,9 @@ jobs:
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            npm run delete --
-              --verbose
+          run: |
+            npm run delete -- \
+              --verbose \
               --name "$WORKER"
 
       - name: Test Cloudflare worker deletion
@@ -82,12 +82,12 @@ jobs:
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            echo Deploying worker "$WORKER";
-            npm run deploy --
-              --verbose
-              --literal GITHUB_APPLY:true
-              --secret GITHUB_TOKEN:GH_TOKEN
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER"
 
       - name: Set worker fqdn envvar
@@ -113,13 +113,13 @@ jobs:
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            echo Deploying worker "$WORKER";
-            npm run deploy --
-              --verbose
-              --literal GITHUB_APPLY:true
-              --secret GITHUB_TOKEN:GH_TOKEN
-              --name "$WORKER"
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
               --route "$FQDN/*"
 
       - name: Test custom domain resolution
@@ -139,12 +139,12 @@ jobs:
       - name: Remove custom domain from Cloudflare worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            echo Deploying worker "$WORKER";
-            npm run deploy --
-              --verbose
-              --literal GITHUB_APPLY:true
-              --secret GITHUB_TOKEN:GH_TOKEN
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER";
 
       - name: Test custom domain resolution
@@ -167,9 +167,9 @@ jobs:
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            npm run delete --
-              --verbose
+          run: |
+            npm run delete -- \
+              --verbose \
               --name "$WORKER"
 
       - name: Install utilities
@@ -197,13 +197,13 @@ jobs:
       - name: Deploy Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            echo Deploying worker "$WORKER";
-            npm run deploy --
-              --verbose
-              --literal GITHUB_APPLY:true
-              --secret GITHUB_TOKEN:GH_TOKEN
-              --name "$WORKER"
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
               --route "$FQDN/*"
 
       - name: Test custom domain endpoint
@@ -220,9 +220,9 @@ jobs:
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >
-            npm run delete --
-              --verbose
+          run: |
+            npm run delete -- \
+              --verbose \
               --name "$WORKER"
 
       - name: Check custom domain record
