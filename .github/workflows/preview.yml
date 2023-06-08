@@ -40,7 +40,7 @@ jobs:
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: >-
+          run: >
             npm run deploy --
               --verbose
               --literal GITHUB_APPLY:true
@@ -49,7 +49,7 @@ jobs:
         id: deploy
 
       - name: Test deployed Cloudflare worker
-        run: |
+        run: >
           curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
 
       - name: Delete Cloudflare Worker
@@ -173,8 +173,7 @@ jobs:
               --name "$WORKER"
 
       - name: Install utilities
-        run: |
-          sudo apt-get install -y jq httpie
+        run: sudo apt-get install -y jq httpie
 
       - name: Set worker dns content envvar
         run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
