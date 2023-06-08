@@ -171,10 +171,10 @@ jobs:
           sudo apt-get install -y jq httpie
 
       - name: Set worker dns content envvar
-        run: echo "CONTENT=1.1.1.1" >> $GITHUB_ENV
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
       - name: Create origin record for custom domain
-        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A --activate add ${FQDN} ${CONTENT}
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} --activate --type A add ${FQDN} ${CONTENT}
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
