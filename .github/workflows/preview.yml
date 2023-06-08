@@ -172,9 +172,10 @@ jobs:
 
       - name: Query Cloudflare zone data
         run: |
+          API_URL="https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name=${CUSTOM_DOMAIN}"; \
+          echo "Querying $API_URL for zone data"
           CUSTOM_DOMAIN_ID=$(curl --silent --request GET --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name=${CUSTOM_DOMAIN} \
-            | jq '.result[0].id'); \
+             "$API_URL" | jq '.result[0].id'); \
           echo CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID} >> $GITHUB_ENV
 
       - name: Create origin record for custom domain record
