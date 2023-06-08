@@ -170,13 +170,13 @@ jobs:
         run: |
           sudo apt-get install -y jq httpie
 
-      - name: Query Cloudflare zone data
+      - name: List zone and record data
         run: |
-          API_URL="https://api.cloudflare.com/client/v4/zones?account.id=${CLOUDFLARE_ACCOUNT_ID}&name=${CUSTOM_DOMAIN}"; \
-          echo "Issuing GET request to ${API_URL} to retrieve zone data"
-          CUSTOM_DOMAIN_ID=$(curl --silent --request GET --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-             "${API_URL}" | jq '.result[0].id' -r); \
-          echo "CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID}" >> $GITHUB_ENV
+          npx cfcli zones --format json | jq ; \
+          npx cfcli --domain ${CUSTOM_DOMAIN} --format json ls | jq; \
+          npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} | jq
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Create origin record for custom domain record
         run: |
