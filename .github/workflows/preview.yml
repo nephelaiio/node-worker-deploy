@@ -180,7 +180,7 @@ jobs:
 
       - name: Create origin record for custom domain record
         run: |
-          API_URL="https://api.cloudflare.com/client/v4/zones/${CUSTOM_DOMAIN_ID}/dns_records/${FQDN}"; \
+          API_URL="https://api.cloudflare.com/client/v4/zones/${CUSTOM_DOMAIN_ID}/dns_records"; \
           echo "Issuing POST request to ${API_URL} to create zone record"
           curl --silent --request POST --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API_URL" \
           --data '{ "content": "1.1.1.1", "name": "${FQDN}", "type": "A", "proxied": true }'
