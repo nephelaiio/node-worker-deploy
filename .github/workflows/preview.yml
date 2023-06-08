@@ -60,7 +60,7 @@ jobs:
               --verbose \
               --name "$WORKER"
 
-      - name: Test destroyed Cloudflare worker
+      - name: Test Cloudflare worker deletion
         run: >
           retries=10;
           while [ $retries -gt 0 ]; do
@@ -170,20 +170,76 @@ jobs:
         run: |
           sudo apt-get install -y jq httpie
 
-      - name: List zone and record data
-        run: |
-          npx cfcli zones --format json | jq ; \
-          npx cfcli --domain ${CUSTOM_DOMAIN} --format json ls | jq; \
-          npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} | jq
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=1.1.1.1" >> $GITHUB_ENV
+
+      - name: Create origin record for custom domain
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} add --activate ${FQDN} ${CONTENT}
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
-      - name: Create origin record for custom domain record
+      - name: Check custom domain record
         run: |
-          API_URL="https://api.cloudflare.com/client/v4/zones/${CUSTOM_DOMAIN_ID}/dns_records"; \
-          echo "Issuing POST request to ${API_URL} to create zone record"; \
-          http POST "$API_URL" "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-          content="1.1.1.1" name="${FQDN}" type="A" proxied=true
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          if [[ "$records" == "1" ]]; then \
+            exit 0; \
+          else \
+            exit 1;
+          fi
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
+      - name: Deploy Cloudflare worker with custom domain
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
+              --route "$FQDN/*"
+
+      - name: Test custom domain endpoint
+        run: |
+          ADDRESS="$(dig +short $FQDN @${CONTENT} | head -1)"; \
+          curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1
+
+      - name: Delete Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run delete -- \
+              --verbose \
+              --name "$WORKER"
+
+      - name: Check custom domain record
+        run: |
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          if [[ "$records" == "1" ]]; then \
+            exit 0; \
+          else \
+            exit 1;
+          fi
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned
+
+      - name: Destroy origin record for custom domain
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} rm ${FQDN} ${CONTENT}
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
+      - name: Check custom domain record
+        run: |
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          if [[ "$records" == "0" ]]; then \
+            exit 0; \
+          else \
+            exit 1;
+          fi
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
