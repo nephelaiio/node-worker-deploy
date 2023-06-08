@@ -40,11 +40,11 @@ jobs:
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+          run: >-
+            npm run deploy --
+              --verbose
+              --literal GITHUB_APPLY:true
+              --secret GITHUB_TOKEN:GH_TOKEN
               --name "$WORKER"
         id: deploy
 
@@ -55,9 +55,9 @@ jobs:
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            npm run delete -- \
-              --verbose \
+          run: >
+            npm run delete --
+              --verbose
               --name "$WORKER"
 
       - name: Test Cloudflare worker deletion
@@ -82,92 +82,94 @@ jobs:
       - name: Deploy Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+          run: >
+            echo Deploying worker "$WORKER";
+            npm run deploy --
+              --verbose
+              --literal GITHUB_APPLY:true
+              --secret GITHUB_TOKEN:GH_TOKEN
               --name "$WORKER"
 
       - name: Set worker fqdn envvar
         run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
 
       - name: Test custom domain resolution
-        run: |
-          RETRIES=6; \
-          SLEEP=30; \
-          while [[ $RETRIES > 0 ]]; do \
-            address="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
-            if [ -z "$address" ]; then \
-              echo "dns query for record $FQDN returned NXDOMAIN"; \
-              exit 0; \
-            else \
-              echo "dns query for record $FQDN returned $address. retrying ..."; \
-              sleep $SLEEP; \
-            fi; \
-          done; \
-          echo "dns record $FQDN is present"; \
+        run: >
+          RETRIES=6;
+          SLEEP=30;
+          while [[ $RETRIES > 0 ]]; do
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            if [ -z "$address" ]; then
+              echo "dns query for record $FQDN returned NXDOMAIN";
+              exit 0;
+            else
+              echo "dns query for record $FQDN returned $address. retrying ...";
+              sleep $SLEEP;
+            fi;
+          done;
+          echo "dns record $FQDN is present";
           exit 1;
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER" \
+          run: >
+            echo Deploying worker "$WORKER";
+            npm run deploy --
+              --verbose
+              --literal GITHUB_APPLY:true
+              --secret GITHUB_TOKEN:GH_TOKEN
+              --name "$WORKER"
               --route "$FQDN/*"
 
       - name: Test custom domain resolution
         run: "dig +short $FQDN @1.1.1.1"
 
       - name: Test custom domain endpoint
-        run: |
-          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
-          response_code=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1); \
-          if [[ "$response_code" != "200" ]]; then \
-            exit 1; \
+        run: >
+          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+          return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+          return_code=$(echo "$return_header" | awk '{print $2}');
+          echo "return code is $return_code";
+          if [[ "$return_code" != "200" ]]; then
+            exit 1;
           fi
           curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Remove custom domain from Cloudflare worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+          run: >
+            echo Deploying worker "$WORKER";
+            npm run deploy --
+              --verbose
+              --literal GITHUB_APPLY:true
+              --secret GITHUB_TOKEN:GH_TOKEN
               --name "$WORKER";
 
       - name: Test custom domain resolution
-        run: |
-          RETRIES=6; \
-          SLEEP=30; \
-          while [[ $RETRIES > 0 ]]; do \
-            address="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
-            if [ -z "$address" ]; then \
-              echo "dns query for record $FQDN returned NXDOMAIN"; \
-              exit 0; \
-            else \
-              echo "dns query for record $FQDN returned $address. retrying ..."; \
-              sleep $SLEEP; \
-            fi; \
-          done; \
-          echo "dns record $FQDN is present"; \
+        run: >
+          RETRIES=6;
+          SLEEP=30;
+          while [[ $RETRIES > 0 ]]; do
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            if [ -z "$address" ]; then
+              echo "dns query for record $FQDN returned NXDOMAIN";
+              exit 0;
+            else
+              echo "dns query for record $FQDN returned $address. retrying ...";
+              sleep $SLEEP;
+            fi;
+          done;
+          echo "dns record $FQDN is present";
           exit 1;
 
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            npm run delete -- \
-              --verbose \
+          run: >
+            npm run delete --
+              --verbose
               --name "$WORKER"
 
       - name: Install utilities
@@ -183,11 +185,11 @@ jobs:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Check custom domain record
-        run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
-          if [[ "$records" == "1" ]]; then \
-            exit 0; \
-          else \
+        run: >
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
+          if [[ "$records" == "1" ]]; then
+            exit 0;
+          else
             exit 1;
           fi
         env:
@@ -196,38 +198,40 @@ jobs:
       - name: Deploy Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER" \
+          run: >
+            echo Deploying worker "$WORKER";
+            npm run deploy --
+              --verbose
+              --literal GITHUB_APPLY:true
+              --secret GITHUB_TOKEN:GH_TOKEN
+              --name "$WORKER"
               --route "$FQDN/*"
 
       - name: Test custom domain endpoint
-        run: |
-          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)"; \
-          response_code=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1); \
-          if [[ "$response_code" != "200" ]]; then \
-            exit 1; \
+        run: >
+          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+          return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+          return_code=$(echo "$return_header" | awk '{print $2}');
+          echo "return code is $return_code";
+          if [[ "$return_code" != "200" ]]; then
+            exit 1;
           fi
           curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
         with:
-          run: |
-            npm run delete -- \
-              --verbose \
+          run: >
+            npm run delete --
+              --verbose
               --name "$WORKER"
 
       - name: Check custom domain record
-        run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
-          if [[ "$records" == "1" ]]; then \
-            exit 0; \
-          else \
+        run: >
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
+          if [[ "$records" == "1" ]]; then
+            exit 0;
+          else
             exit 1;
           fi
         env:
@@ -239,11 +243,11 @@ jobs:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Check custom domain record
-        run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
-          if [[ "$records" == "0" ]]; then \
-            exit 0; \
-          else \
+        run: >
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
+          if [[ "$records" == "0" ]]; then
+            exit 0;
+          else
             exit 1;
           fi
         env:
