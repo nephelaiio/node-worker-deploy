@@ -174,7 +174,7 @@ jobs:
         run: echo "CONTENT=1.1.1.1" >> $GITHUB_ENV
 
       - name: Create origin record for custom domain
-        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A add --activate ${FQDN} ${CONTENT}
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A --activate add ${FQDN} ${CONTENT}
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
