@@ -174,13 +174,13 @@ jobs:
         run: echo "CONTENT=1.1.1.1" >> $GITHUB_ENV
 
       - name: Create origin record for custom domain
-        run: npx cfcli --domain ${CUSTOM_DOMAIN} add --activate ${FQDN} ${CONTENT}
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A add --activate ${FQDN} ${CONTENT}
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Check custom domain record
         run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
           if [[ "$records" == "1" ]]; then \
             exit 0; \
           else \
@@ -216,7 +216,7 @@ jobs:
 
       - name: Check custom domain record
         run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
           if [[ "$records" == "1" ]]; then \
             exit 0; \
           else \
@@ -229,13 +229,13 @@ jobs:
         run: echo Add test to ensure origin records are not pruned
 
       - name: Destroy origin record for custom domain
-        run: npx cfcli --domain ${CUSTOM_DOMAIN} rm ${FQDN} ${CONTENT}
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A rm ${FQDN} ${CONTENT}
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Check custom domain record
         run: |
-          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r); \
           if [[ "$records" == "0" ]]; then \
             exit 0; \
           else \
