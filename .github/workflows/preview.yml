@@ -133,7 +133,7 @@ jobs:
           echo "return code is $return_code";
           if [[ "$return_code" != "200" ]]; then
             exit 1;
-          fi
+          fi;
           curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Remove custom domain from Cloudflare worker
@@ -214,7 +214,7 @@ jobs:
           echo "return code is $return_code";
           if [[ "$return_code" != "200" ]]; then
             exit 1;
-          fi
+          fi;
           curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Delete Cloudflare Worker
