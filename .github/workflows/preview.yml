@@ -172,15 +172,18 @@ jobs:
 
       - name: Query Cloudflare zone data
         run: |
-          API_URL="https://api.cloudflare.com/client/v4/zones?account.id=${CF_ACCOUNT_ID}&name=${CUSTOM_DOMAIN}"; \
-          echo "Querying $API_URL for zone data"
-          CUSTOM_DOMAIN_ID=$(curl --silent --request GET --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-             "$API_URL" | jq '.result[0].id'); \
-          echo CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID} >> $GITHUB_ENV
+          API_URL="https://api.cloudflare.com/client/v4/zones?account.id=${CLOUDFLARE_ACCOUNT_ID}&name=${CUSTOM_DOMAIN}"; \
+          echo "Issuing GET request to ${API_URL} to retrieve zone data"
+          CUSTOM_DOMAIN_ID=$(curl --silent --request GET --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+             "${API_URL}" | jq '.result[0].id'); \
+          echo "CUSTOM_DOMAIN_ID=${CUSTOM_DOMAIN_ID}" >> $GITHUB_ENV
 
       - name: Create origin record for custom domain record
         run: |
-          echo $CUSTOM_DOMAIN_ID
+          API_URL="https://api.cloudflare.com/client/v4/zones/${CUSTOM_DOMAIN_ID}/dns_records/${FQDN"}; \
+          echo "Issuing POST request to ${API_URL} to create zone record"
+          curl --silent --request POST --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API_URL" \
+          --data '{ "content": "1.1.1.1", "name": "${FQDN}", "type": "A", "proxied": true }'
 
       - name: Record pending tasks
         run: echo Add test to ensure origin records are not pruned
