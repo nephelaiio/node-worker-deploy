@@ -126,15 +126,20 @@ jobs:
         run: "dig +short $FQDN @1.1.1.1"
 
       - name: Test custom domain endpoint
-        run: >
-          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
-          return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
-          return_code=$(echo "$return_header" | awk '{print $2}');
-          echo "return code is $return_code";
-          if [[ "$return_code" != "200" ]]; then
-            exit 1;
-          fi;
-          curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Remove custom domain from Cloudflare worker
         uses: mathiasvr/command-output@v2.0.0
