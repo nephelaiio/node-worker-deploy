@@ -183,6 +183,11 @@ jobs:
       - name: Set worker dns content envvar
         run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
+      - name: Delete origin record for custom domain
+        run: npx cfcli --domain ${CUSTOM_DOMAIN} --type A rm ${FQDN} ${CONTENT}
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
       - name: Create origin record for custom domain
         run: npx cfcli --domain ${CUSTOM_DOMAIN} --activate --type A add ${FQDN} ${CONTENT}
         env:
