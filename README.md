@@ -13,26 +13,26 @@ Apply the following steps in your CI configuration at the appropriate stages
 
 ```
 - name: Deploy Cloudflare worker with custom domain
-   run: |
-     echo Deploying worker "$WORKER"; \
-     npx @nephelaiio/worker-deploy -- \
-        deploy \
-        --verbose \
-        --literal GITHUB_APPLY:true \
-        --secret GITHUB_TOKEN:GH_TOKEN \
-        --name "$WORKER" \
-        --route "$FQDN/*"
+  run: |
+    echo Deploying worker "$WORKER"; \
+    npx @nephelaiio/worker-deploy -- \
+       deploy \
+       --verbose \
+       --literal GITHUB_APPLY:true \
+       --secret GITHUB_TOKEN:GH_TOKEN \
+       --name "$WORKER" \
+       --route "$FQDN/*"
 ```
 
 ```
 
 - name: Destroy Cloudflare worker
-   run: |
-     echo Deploying worker "$WORKER"; \
-     npx @nephelaiio/worker-deploy -- \
-        delete \
-        --verbose \
-        --name "$WORKER"
+  run: |
+    echo Deploying worker "$WORKER"; \
+    npx @nephelaiio/worker-deploy -- \
+       delete \
+       --verbose \
+       --name "$WORKER"
 ```
 
 ## Contributing
