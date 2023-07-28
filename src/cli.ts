@@ -8,6 +8,7 @@ import { getWorker } from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
 import {
   deploy,
+  wrangler,
   workerURL,
   defaultWorkerName,
   project,
@@ -213,7 +214,17 @@ async function main() {
         );
         if (deployment) {
           logger.info(`Deleting worker ${worker}`);
-          exec(`wrangler delete --name ${worker}`);
+          const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
+          wrangler(
+            (cfg) => {
+              cfg.name = worker;
+              cfg.account_id = accountId;
+              return cfg;
+            },
+            () => {
+              exec(`wrangler delete --name ${worker}`);
+            }
+          );
         } else {
           logger.debug(`Worker ${worker} not found`);
         }

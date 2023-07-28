@@ -183,6 +183,15 @@ jobs:
       - name: Set worker dns content envvar
         run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
+      - name: Delete origin record for custom domain
+        run: >
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
+          if [[ $records -gt 0 ]]; then
+            npx cfcli --domain ${CUSTOM_DOMAIN} --type A rm ${FQDN} ${CONTENT};
+          fi
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
       - name: Create origin record for custom domain
         run: npx cfcli --domain ${CUSTOM_DOMAIN} --activate --type A add ${FQDN} ${CONTENT}
         env:
@@ -191,7 +200,7 @@ jobs:
       - name: Check custom domain record
         run: >
           records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
-          if [[ "$records" == "1" ]]; then
+          if [[ $records -eq 1 ]]; then
             exit 0;
           else
             exit 1;
@@ -233,7 +242,7 @@ jobs:
       - name: Check custom domain record
         run: >
           records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
-          if [[ "$records" == "1" ]]; then
+          if [[ $records -eq 1 ]]; then
             exit 0;
           else
             exit 1;
@@ -249,7 +258,7 @@ jobs:
       - name: Check custom domain record
         run: >
           records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
-          if [[ "$records" == "0" ]]; then
+          if [[ $records -eq 0 ]]; then
             exit 0;
           else
             exit 1;
