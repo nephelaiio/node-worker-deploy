@@ -17,7 +17,8 @@ const cloudflareAPI = async (
   token: string,
   path: string,
   method: ApiMethod = 'GET',
-  body: object | null = null
+  body: object | null = null,
+  ignore_errors = false
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -49,8 +50,12 @@ const cloudflareAPI = async (
         logger.debug(`Got response ${response.status} for ${uri}`);
         return method != 'DELETE' ? response : null;
       } else {
-        logger.error(`Unexpected response ${response.status} for ${uri}`);
-        throw new Error(`Unexpected response ${response.status} for ${uri}`);
+        if (ignore_errors) {
+          logger.warn(`Ignoring error response ${response.status} for ${uri}`);
+        } else {
+          logger.error(`Unexpected response ${response.status} for ${uri}`);
+          throw new Error(`Unexpected response ${response.status} for ${uri}`);
+        }
       }
     }
   }
@@ -304,12 +309,18 @@ async function createRoute(
   const domains = await listWorkerDomains(token, account);
   if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
     logger.debug(`Attaching ${worker} to domain ${domain}`);
-    await cloudflareAPI(token, `/accounts/${account}/workers/domains`, 'PUT', {
-      environment: 'production',
-      hostname,
-      service: worker,
-      zone_id: zone.id
-    });
+    await cloudflareAPI(
+      token,
+      `/accounts/${account}/workers/domains`,
+      'PUT',
+      {
+        environment: 'production',
+        hostname,
+        service: worker,
+        zone_id: zone.id
+      },
+      true
+    );
   }
   await createOriginlessRecord(token, account, hostname);
   const routes = await listWorkerRoutes(token, account);
