@@ -93,22 +93,11 @@ jobs:
       - name: Set worker fqdn envvar
         run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
 
-      - name: Test custom domain resolution
+      - name: Clean previous records for custom domain
         run: >
-          RETRIES=6;
-          SLEEP=30;
-          while [[ $RETRIES > 0 ]]; do
-            address="$(dig +short $FQDN @1.1.1.1 | head -1)";
-            if [ -z "$address" ]; then
-              echo "dns query for record $FQDN returned NXDOMAIN";
-              exit 0;
-            else
-              echo "dns query for record $FQDN returned $address. retrying ...";
-              sleep $SLEEP;
-            fi;
-          done;
-          echo "dns record $FQDN is present";
-          exit 1;
+          npx cfcli --domain $domain find ${CUSTOM_DOMAIN} --format json |
+            jq '. | map(("--type " + .type + " " + .name + " " + .content)) | .[]' -r |
+            xargs npx cfcli --domain ${CUSTOM_DOMAIN} rm
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
@@ -157,6 +146,7 @@ jobs:
           RETRIES=6;
           SLEEP=30;
           while [[ $RETRIES > 0 ]]; do
+            RETRIES=$(( RETRIES - 1 ));
             address="$(dig +short $FQDN @1.1.1.1 | head -1)";
             if [ -z "$address" ]; then
               echo "dns query for record $FQDN returned NXDOMAIN";
