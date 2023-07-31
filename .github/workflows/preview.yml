@@ -98,6 +98,8 @@ jobs:
           npx cfcli --domain $domain find ${CUSTOM_DOMAIN} --format json |
             jq '. | map(("--type " + .type + " " + .name + " " + .content)) | .[]' -r |
             xargs npx cfcli --domain ${CUSTOM_DOMAIN} rm
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
