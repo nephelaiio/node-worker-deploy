@@ -95,7 +95,7 @@ jobs:
 
       - name: Clean previous records for custom domain
         run: >
-          echo npx cfcli --domain $CUSTOM_DOMAIN find $FQDN --format json;
+          npx cfcli --domain $CUSTOM_DOMAIN find $FQDN --format json;
           exit 1;
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
