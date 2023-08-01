@@ -326,10 +326,16 @@ async function createRoute(
   const routes = await listWorkerRoutes(token, account);
   if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
-    await cloudflareAPI(token, `/zones/${zone.id}/workers/routes`, 'POST', {
-      pattern: route.pattern,
-      script: worker
-    });
+    await cloudflareAPI(
+      token,
+      `/zones/${zone.id}/workers/routes`,
+      'POST',
+      {
+        pattern: route.pattern,
+        script: worker
+      },
+      true
+    );
     logger.debug(
       `Worker route for pattern ${route.pattern} added successfully`
     );
