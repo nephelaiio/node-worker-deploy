@@ -1,5 +1,5 @@
 ---
-name: preview
+name: dns
 
 on:
   pull_request:
@@ -31,67 +31,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install utilities
+        run: sudo apt-get install -y jq httpie
+
       - name: Build project
         run: npm run build --production
 
       - name: Set worker name envvar
         run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}" >> $GITHUB_ENV
 
-      - name: Deploy Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER"
-        id: deploy
-
-      - name: Test deployed Cloudflare worker
-        run: >
-          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
-
-      - name: Delete Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            npm run delete -- \
-              --verbose \
-              --name "$WORKER"
-
-      - name: Test Cloudflare worker deletion
-        run: >
-          retries=10;
-          while [ $retries -gt 0 ]; do
-              retries=$((retries - 1));
-              output="${{ steps.deploy.outputs.stdout }}";
-              url="${output//[$'\t\r\n ']}";
-              echo "testing url $url"
-              return_header=$(curl -sD- $url | head -1);
-              return_code=$(echo "$return_header" | awk '{print $2}');
-              echo "return code is $return_code";
-              if [[ "$return_code" == "404" ]]; then
-                  exit 0;
-              fi;
-              sleep 6;
-              echo "retrying ..."
-          done;
-          exit 1;
-
-      - name: Deploy Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER"
-
       - name: Set worker fqdn envvar
-        run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+        run: echo "FQDN=${WORKER}-${GITHUB_WORKFLOW}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
 
       - name: Clean previous records for custom domain
         run: >
@@ -103,6 +53,17 @@ jobs:
           fi
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
+      - name: Deploy Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER"
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
@@ -171,12 +132,6 @@ jobs:
             npm run delete -- \
               --verbose \
               --name "$WORKER"
-
-      - name: Install utilities
-        run: sudo apt-get install -y jq httpie
-
-      - name: Set worker dns content envvar
-        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
       - name: Delete origin record for custom domain
         run: >
