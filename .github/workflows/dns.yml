@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  preview:
+  dns:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
@@ -81,7 +81,12 @@ jobs:
               --route "$FQDN/*"
 
       - name: Test custom domain resolution
-        run: "dig +short $FQDN @1.1.1.1"
+        run: >
+          if [[ $(dig +short $FQDN @1.1.1.1) ]]; then \
+            exit 1; \
+          else \
+            exit 0; \
+          fi
 
       - name: Test custom domain endpoint
         uses: nick-fields/retry@v2

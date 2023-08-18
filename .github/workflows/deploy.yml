@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  preview:
+  deploy:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}

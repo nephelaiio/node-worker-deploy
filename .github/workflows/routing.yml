@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  preview:
+  routing:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
@@ -71,7 +71,13 @@ jobs:
               --route "$FQDN/hola";
 
       - name: Test custom domain resolution
-        run: "dig +short $FQDN @1.1.1.1"
+        run: >
+          if [[ $(dig +short $FQDN @1.1.1.1) ]]; then \
+            exit 1; \
+          else \
+            exit 0; \
+          fi
+
 
       - name: Test custom domain route /hello
         uses: nick-fields/retry@v2
@@ -87,7 +93,7 @@ jobs:
             if [[ "$return_code" != "200" ]]; then
               exit 1;
             fi;
-            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+            curl -sk "https://$FQDN/hello" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Test custom domain route /hola
         uses: nick-fields/retry@v2
