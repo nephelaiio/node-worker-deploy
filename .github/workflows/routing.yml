@@ -63,9 +63,9 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER"
-              --route "$FQDN/hello"
-              --route "$FQDN/hola"
+              --name "$WORKER" \
+              --route "$FQDN/hello" \
+              --route "$FQDN/hola";
 
       - name: Test custom domain resolution
         run: "dig +short $FQDN @1.1.1.1"
@@ -117,7 +117,7 @@ jobs:
               exit 0;
             fi;
 
-      - name: Update custom domain from Cloudflare worker
+      - name: Update Cloudflare Worker routes
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
@@ -126,7 +126,56 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER";
+              --name "$WORKER" \
+              --route "$FQDN/hello" \
+              --route "$FQDN/hallo";
+
+      - name: Test custom domain route /hello
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hello" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Test custom domain route /hola
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hola" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 0;
+            fi;
+
+      - name: Test custom domain route /hallo
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hallo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
 
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
