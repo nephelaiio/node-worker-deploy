@@ -43,6 +43,9 @@ jobs:
       - name: Set worker fqdn envvar
         run: echo "FQDN=${WORKER}-${GITHUB_WORKFLOW}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
 
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
+
       - name: Clean previous records for custom domain
         run: >
           records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
