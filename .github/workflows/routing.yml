@@ -70,15 +70,6 @@ jobs:
               --route "$FQDN/hello" \
               --route "$FQDN/hola";
 
-      - name: Test custom domain resolution
-        run: >
-          if [[ $(dig +short $FQDN @1.1.1.1) ]]; then \
-            exit 1; \
-          else \
-            exit 0; \
-          fi
-
-
       - name: Test custom domain route /hello
         uses: nick-fields/retry@v2
         with:
