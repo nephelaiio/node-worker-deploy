@@ -18,7 +18,7 @@ const cloudflareAPI = async (
   path: string,
   method: ApiMethod = 'GET',
   body: object | null = null,
-  expected_errors = [200]
+  expected_errors: Array<number> = []
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -139,7 +139,8 @@ async function createOriginlessRecord(
         content: ORIGINLESS_CONTENT,
         type: ORIGINLESS_TYPE,
         proxied: true
-      }
+      },
+      [200, 409]
     );
     logger.debug(`Created originless record ${record}`);
   }
@@ -318,7 +319,7 @@ async function createRoute(
       [200, 409]
     );
   }
-  await createOriginlessRecord(token, account, hostname, [200, 409]);
+  await createOriginlessRecord(token, account, hostname);
   const routes = await listWorkerRoutes(token, account);
   if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
