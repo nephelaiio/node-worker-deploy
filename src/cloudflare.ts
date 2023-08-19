@@ -268,11 +268,17 @@ async function listWorkerDomainRoutes(
   logger.debug(`Fetching routes for zone '${domain}'`);
   const routeQuery = await cloudflareAPI(
     token,
-    `/zones/${domain}/workers/routes`
+    `/zones/${domain}/workers/routes`,
+    [404]
   );
-  const routes = routeQuery.result;
-  logger.debug(`Found '${routes.length}' matching routes`);
-  return routes;
+  if (routeQuery.status == 404) {
+    logger.debug(`No routes found for zone '${domain}'`);
+    return [];
+  } else {
+    const routes = routeQuery.result;
+    logger.debug(`Found '${routes.length}' matching routes`);
+    return routes;
+  }
 }
 
 async function listWorkerRoutes(token: string, account: string): Promise<any> {
