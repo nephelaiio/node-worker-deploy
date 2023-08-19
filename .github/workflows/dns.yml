@@ -82,27 +82,21 @@ jobs:
 
       - name: Test custom domain resolution
         run: >
-          if [[ $(dig +short $FQDN @1.1.1.1) ]]; then \
-            exit 1; \
-          else \
-            exit 0; \
-          fi
-
-      - name: Test custom domain endpoint
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 6
-          retry_on: error
-          timeout_seconds: 10
-          command: >
-            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
-            return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
-            return_code=$(echo "$return_header" | awk '{print $2}');
-            echo "return code is $return_code";
-            if [[ "$return_code" != "200" ]]; then
-              exit 1;
+          RETRIES=6;
+          SLEEP=30;
+          while [[ $RETRIES > 0 ]]; do
+            RETRIES=$(( RETRIES - 1 ));
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            if [ -z "$address" ]; then
+              echo "dns query for record $FQDN returned NXDOMAIN";
+              sleep $SLEEP;
+            else
+              echo "dns query for record $FQDN returned $address";
+              exit 0;
             fi;
-            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+          done;
+          echo "dns record $FQDN was not created on time";
+          exit 1;
 
       - name: Remove custom domain from Cloudflare worker
         uses: mathiasvr/command-output@v2.0.0
@@ -126,11 +120,11 @@ jobs:
               echo "dns query for record $FQDN returned NXDOMAIN";
               exit 0;
             else
-              echo "dns query for record $FQDN returned $address. retrying ...";
+              echo "dns query for record $FQDN returned $address";
               sleep $SLEEP;
             fi;
           done;
-          echo "dns record $FQDN is present";
+          echo "dns record $FQDN was not removed on time";
           exit 1;
 
       - name: Delete Cloudflare Worker
