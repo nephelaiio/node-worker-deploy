@@ -159,7 +159,9 @@ async function deleteOriginlessRecord(
     await cloudflareAPI(
       token,
       `/zones/${zone.id}/dns_records/${originlessRecord.id}`,
-      'DELETE'
+      'DELETE',
+      null,
+      [405]
     );
   } else {
     logger.debug('Origin record detected, skipping');
