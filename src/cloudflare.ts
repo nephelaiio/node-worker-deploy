@@ -368,7 +368,8 @@ async function deleteRoute(
       await cloudflareAPI(
         token,
         `/accounts/${account}/workers/domains/${domain.id}`,
-        'DELETE'
+        'DELETE',
+        [404]
       );
       logger.debug(`Detached domain ${domain.zone_name} from workers`);
     }
