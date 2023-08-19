@@ -140,7 +140,7 @@ async function createOriginlessRecord(
         type: ORIGINLESS_TYPE,
         proxied: true
       },
-      [200, 409]
+      [405]
     );
     logger.debug(`Created originless record ${record}`);
   }
