@@ -1,2 +1,3 @@
-dist/**/*
-.github/workflows/preview.yml
+dist/*
+build/*
+.github/workflows/*.yml
