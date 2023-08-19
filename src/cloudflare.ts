@@ -269,6 +269,8 @@ async function listWorkerDomainRoutes(
   const routeQuery = await cloudflareAPI(
     token,
     `/zones/${domain}/workers/routes`,
+    'GET',
+    null,
     [404]
   );
   if (routeQuery.status == 404) {
