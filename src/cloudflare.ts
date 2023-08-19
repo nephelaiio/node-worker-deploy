@@ -314,7 +314,9 @@ async function createRoute(
   const domain = hostname.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
   const domains = await listWorkerDomains(token, account);
-  logger.debug(`Requested route creation for ${route.pattern}, hostname ${hostname}, domain ${domain}, zone ${zone.id}`);
+  logger.debug(
+    `Requested route creation for ${route.pattern}, hostname ${hostname}, domain ${domain}, zone ${zone.id}`
+  );
   logger.debug(`Existing domains: ${domains.map((x: any) => x.zone_id)}`);
   if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
     logger.debug(`Attaching ${worker} to domain ${domain}`);
