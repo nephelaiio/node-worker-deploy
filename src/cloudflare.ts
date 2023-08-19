@@ -383,6 +383,7 @@ async function deleteRoute(
         token,
         `/accounts/${account}/workers/domains/${domain.id}`,
         'DELETE',
+        null,
         [404]
       );
       logger.debug(`Detached domain ${domain.zone_name} from workers`);
