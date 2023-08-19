@@ -18,7 +18,7 @@ const cloudflareAPI = async (
   path: string,
   method: ApiMethod = 'GET',
   body: object | null = null,
-  ignore_errors = false
+  expected_errors = [200]
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -46,16 +46,12 @@ const cloudflareAPI = async (
         headers,
         body: JSON.stringify(body)
       });
-      if (response.ok) {
+      if (response.ok || expected_errors.some(x => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${uri}`);
         return method != 'DELETE' ? response : null;
       } else {
-        if (ignore_errors) {
-          logger.warn(`Ignoring error response ${response.status} for ${uri}`);
-        } else {
-          logger.error(`Unexpected response ${response.status} for ${uri}`);
-          throw new Error(`Unexpected response ${response.status} for ${uri}`);
-        }
+        logger.error(`Unexpected response ${response.status} for ${uri}`);
+        throw new Error(`Unexpected response ${response.status} for ${uri}`);
       }
     }
   }
@@ -319,10 +315,10 @@ async function createRoute(
         service: worker,
         zone_id: zone.id
       },
-      true
+      [200,409]
     );
   }
-  await createOriginlessRecord(token, account, hostname);
+  await createOriginlessRecord(token, account, hostname, [200, 409]);
   const routes = await listWorkerRoutes(token, account);
   if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
