@@ -46,7 +46,7 @@ const cloudflareAPI = async (
         headers,
         body: JSON.stringify(body)
       });
-      if (response.ok || expected_errors.some(x => x == response.status)) {
+      if (response.ok || expected_errors.some((x) => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${uri}`);
         return method != 'DELETE' ? response : null;
       } else {
@@ -315,7 +315,7 @@ async function createRoute(
         service: worker,
         zone_id: zone.id
       },
-      [200,409]
+      [200, 409]
     );
   }
   await createOriginlessRecord(token, account, hostname, [200, 409]);
