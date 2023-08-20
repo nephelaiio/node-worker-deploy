@@ -334,7 +334,16 @@ async function createRoute(
   await createOriginlessRecord(token, account, hostname);
   const routes = await listWorkerRoutes(token, account);
   const workerRoutes = routes.filter((x: any) => x.script == worker);
-  logger.debug(`Existing routes: ${workerRoutes.map((x: any) => x.pattern)}`);
+  if (workerRoutes.length == 0) {
+    logger.debug(`No routes found for worker ${worker}`);
+  } else {
+    const workerPatterns = workerRoutes.map(
+        (x: any) => x.pattern
+      );
+    logger.debug(
+      `Found routes: ${workerPatterns} for worker ${worker}`
+    );
+  }
   if (workerRoutes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
     await cloudflareAPI(token, `/zones/${zone.id}/workers/routes`, 'POST', {
@@ -344,8 +353,9 @@ async function createRoute(
     logger.debug(
       `Worker route for pattern ${route.pattern} added successfully`
     );
+  } else {
+    logger.debug(`Worker route for pattern ${route.pattern} already exists`);
   }
-}
 
 // destroy originless record if necessary
 async function deleteRoute(
