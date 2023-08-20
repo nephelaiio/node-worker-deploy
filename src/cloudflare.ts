@@ -280,8 +280,7 @@ async function listWorkerDomainRoutes(
     return [];
   } else {
     const routes = routeQuery.result;
-    logger.debug(`Found '${routes.length}' matching routes`);
-    routes.map(JSON.stringify).map(logger.debug);
+    logger.debug(`Found '${routes.length}' matching routes for zone '${domain}'`);
     return routes;
   }
 }
@@ -332,8 +331,9 @@ async function createRoute(
   }
   await createOriginlessRecord(token, account, hostname);
   const routes = await listWorkerRoutes(token, account);
-  logger.debug(`Existing routes: ${routes.map((x: any) => x.pattern)}`);
-  if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
+  const workerRoutes = routes.filter((x: any) => x.script == worker);
+  logger.debug(`Existing routes: ${workerRoutes.map((x: any) => x.pattern)}`);
+  if (workerRoutes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
     await cloudflareAPI(token, `/zones/${zone.id}/workers/routes`, 'POST', {
       pattern: route.pattern,
