@@ -280,7 +280,9 @@ async function listWorkerDomainRoutes(
     return [];
   } else {
     const routes = routeQuery.result;
-    logger.debug(`Found '${routes.length}' matching routes for zone '${domain}'`);
+    logger.debug(
+      `Found '${routes.length}' matching routes for zone '${domain}'`
+    );
     return routes;
   }
 }
