@@ -27,12 +27,12 @@ const cloudflareAPI = async (
   const uri = `https://api.cloudflare.com/client/v4${path}`;
   logger.debug(`Fetching ${method} ${uri}`);
   async function fetchData(url: string) {
-    if (method == 'GET' || method == 'HEAD' || body == null) {
+    if (method == 'GET' || method == 'HEAD') {
       const response = await fetch(url, {
         method,
         headers
       });
-      if (response.ok) {
+      if (response.ok || expected_errors.some((x) => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${method} ${uri}`);
         return response;
       } else {
