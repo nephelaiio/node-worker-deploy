@@ -337,12 +337,8 @@ async function createRoute(
   if (workerRoutes.length == 0) {
     logger.debug(`No routes found for worker ${worker}`);
   } else {
-    const workerPatterns = workerRoutes.map(
-        (x: any) => x.pattern
-      );
-    logger.debug(
-      `Found routes: ${workerPatterns} for worker ${worker}`
-    );
+    const workerPatterns = workerRoutes.map((x: any) => x.pattern);
+    logger.debug(`Found routes: ${workerPatterns} for worker ${worker}`);
   }
   if (workerRoutes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
@@ -356,6 +352,7 @@ async function createRoute(
   } else {
     logger.debug(`Worker route for pattern ${route.pattern} already exists`);
   }
+}
 
 // destroy originless record if necessary
 async function deleteRoute(
