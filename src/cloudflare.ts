@@ -161,7 +161,7 @@ async function deleteOriginlessRecord(
       `/zones/${zone.id}/dns_records/${originlessRecord.id}`,
       'DELETE',
       null,
-      [405]
+      [404]
     );
   } else {
     logger.debug('Origin record detected, skipping');
