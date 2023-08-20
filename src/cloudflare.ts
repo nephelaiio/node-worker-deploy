@@ -357,7 +357,9 @@ async function deleteRoute(
   const response = await cloudflareAPI(
     token,
     `/zones/${zone.id}/workers/routes/${route.id}`,
-    'DELETE'
+    'DELETE',
+    null,
+    [404]
   );
   logger.debug(
     `Worker route for pattern ${route.pattern} deleted successfully`
