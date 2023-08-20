@@ -281,6 +281,7 @@ async function listWorkerDomainRoutes(
   } else {
     const routes = routeQuery.result;
     logger.debug(`Found '${routes.length}' matching routes`);
+    routes.map(JSON.stringify).map(logger.debug);
     return routes;
   }
 }
