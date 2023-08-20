@@ -256,6 +256,8 @@ async function listWorkerDomains(token: string, account: string): Promise<any> {
   const domains = request.result;
   if (domains) {
     logger.debug(`Found ${domains.length} worker domains`);
+    logger.debug('Worker domains:');
+    domains.map(JSON.stringify).map(logger.debug);
     return domains;
   } else {
     logger.debug('No worker domains found');
