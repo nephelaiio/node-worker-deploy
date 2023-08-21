@@ -1,5 +1,5 @@
 ---
-name: preview
+name: dns
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  preview:
+  dns:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
@@ -31,67 +31,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install utilities
+        run: sudo apt-get install -y jq httpie
+
       - name: Build project
         run: npm run build --production
 
       - name: Set worker name envvar
-        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}" >> $GITHUB_ENV
-
-      - name: Deploy Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER"
-        id: deploy
-
-      - name: Test deployed Cloudflare worker
-        run: >
-          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
-
-      - name: Delete Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            npm run delete -- \
-              --verbose \
-              --name "$WORKER"
-
-      - name: Test Cloudflare worker deletion
-        run: >
-          retries=10;
-          while [ $retries -gt 0 ]; do
-              retries=$((retries - 1));
-              output="${{ steps.deploy.outputs.stdout }}";
-              url="${output//[$'\t\r\n ']}";
-              echo "testing url $url"
-              return_header=$(curl -sD- $url | head -1);
-              return_code=$(echo "$return_header" | awk '{print $2}');
-              echo "return code is $return_code";
-              if [[ "$return_code" == "404" ]]; then
-                  exit 0;
-              fi;
-              sleep 6;
-              echo "retrying ..."
-          done;
-          exit 1;
-
-      - name: Deploy Cloudflare Worker
-        uses: mathiasvr/command-output@v2.0.0
-        with:
-          run: |
-            echo Deploying worker "$WORKER"; \
-            npm run deploy -- \
-              --verbose \
-              --literal GITHUB_APPLY:true \
-              --secret GITHUB_TOKEN:GH_TOKEN \
-              --name "$WORKER"
+        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}-${GITHUB_WORKFLOW}" >> $GITHUB_ENV
 
       - name: Set worker fqdn envvar
-        run: echo "FQDN=${WORKER}-test.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+        run: echo "FQDN=${WORKER}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
       - name: Clean previous records for custom domain
         run: >
@@ -103,6 +56,17 @@ jobs:
           fi
         env:
           CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
+      - name: Deploy Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER"
 
       - name: Update Cloudflare worker with custom domain
         uses: mathiasvr/command-output@v2.0.0
@@ -117,23 +81,22 @@ jobs:
               --route "$FQDN/*"
 
       - name: Test custom domain resolution
-        run: "dig +short $FQDN @1.1.1.1"
-
-      - name: Test custom domain endpoint
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 6
-          retry_on: error
-          timeout_seconds: 10
-          command: >
-            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
-            return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
-            return_code=$(echo "$return_header" | awk '{print $2}');
-            echo "return code is $return_code";
-            if [[ "$return_code" != "200" ]]; then
-              exit 1;
+        run: >
+          retries=6;
+          sleep=30;
+          while [[ $retries > 0 ]]; do
+            retries=$(( retries - 1 ));
+            address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            if [ -z "$address" ]; then
+              echo "dns query for record $FQDN returned NXDOMAIN";
+              sleep $sleep;
+            else
+              echo "dns query for record $FQDN returned $address";
+              exit 0;
             fi;
-            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+          done;
+          echo "dns record $FQDN was not created on time";
+          exit 1;
 
       - name: Remove custom domain from Cloudflare worker
         uses: mathiasvr/command-output@v2.0.0
@@ -148,20 +111,20 @@ jobs:
 
       - name: Test custom domain resolution
         run: >
-          RETRIES=6;
-          SLEEP=30;
-          while [[ $RETRIES > 0 ]]; do
-            RETRIES=$(( RETRIES - 1 ));
+          retries=6;
+          sleep=30;
+          while [[ $retries > 0 ]]; do
+            retries=$(( retries - 1 ));
             address="$(dig +short $FQDN @1.1.1.1 | head -1)";
             if [ -z "$address" ]; then
               echo "dns query for record $FQDN returned NXDOMAIN";
               exit 0;
             else
-              echo "dns query for record $FQDN returned $address. retrying ...";
-              sleep $SLEEP;
+              echo "dns query for record $FQDN returned $address";
+              sleep $sleep;
             fi;
           done;
-          echo "dns record $FQDN is present";
+          echo "dns record $FQDN was not removed on time";
           exit 1;
 
       - name: Delete Cloudflare Worker
@@ -171,12 +134,6 @@ jobs:
             npm run delete -- \
               --verbose \
               --name "$WORKER"
-
-      - name: Install utilities
-        run: sudo apt-get install -y jq httpie
-
-      - name: Set worker dns content envvar
-        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
 
       - name: Delete origin record for custom domain
         run: >
@@ -217,14 +174,24 @@ jobs:
 
       - name: Test custom domain endpoint
         run: >
-          ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
-          return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+          address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+          retries=6;
+          while [ -z "$address" ]; do
+            if [[ $retries == 0 ]]; then
+              exit 1;
+            else
+              sleep 10;
+              address="$(dig +short $FQDN @1.1.1.1 | head -1)";
+              retries=$((retries - 1));
+            fi;
+          done;
+          return_header=$(curl -sk "https://$FQDN" --resolve "$FQDN:443:$address" -D- | head -1);
           return_code=$(echo "$return_header" | awk '{print $2}');
           echo "return code is $return_code";
           if [[ "$return_code" != "200" ]]; then
             exit 1;
           fi;
-          curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+          curl -sk "https://$FQDN" --resolve "$FQDN:443:$address" | grep "^Hello world"
 
       - name: Delete Cloudflare Worker
         uses: mathiasvr/command-output@v2.0.0
