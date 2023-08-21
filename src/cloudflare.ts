@@ -18,7 +18,7 @@ const cloudflareAPI = async (
   path: string,
   method: ApiMethod = 'GET',
   body: object | null = null,
-  ignore_errors = false
+  expected_errors: Array<number> = []
 ): Promise<any> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -27,12 +27,12 @@ const cloudflareAPI = async (
   const uri = `https://api.cloudflare.com/client/v4${path}`;
   logger.debug(`Fetching ${method} ${uri}`);
   async function fetchData(url: string) {
-    if (method == 'GET' || method == 'HEAD' || body == null) {
+    if (method == 'GET' || method == 'HEAD') {
       const response = await fetch(url, {
         method,
         headers
       });
-      if (response.ok) {
+      if (response.ok || expected_errors.some((x) => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${method} ${uri}`);
         return response;
       } else {
@@ -46,16 +46,13 @@ const cloudflareAPI = async (
         headers,
         body: JSON.stringify(body)
       });
-      if (response.ok) {
+      if (response.ok || expected_errors.some((x) => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${uri}`);
         return method != 'DELETE' ? response : null;
       } else {
-        if (ignore_errors) {
-          logger.warn(`Ignoring error response ${response.status} for ${uri}`);
-        } else {
-          logger.error(`Unexpected response ${response.status} for ${uri}`);
-          throw new Error(`Unexpected response ${response.status} for ${uri}`);
-        }
+        const error = `Unexpected response ${response.status} for ${method} ${uri}`;
+        logger.error(error);
+        throw new Error(error);
       }
     }
   }
@@ -143,7 +140,8 @@ async function createOriginlessRecord(
         content: ORIGINLESS_CONTENT,
         type: ORIGINLESS_TYPE,
         proxied: true
-      }
+      },
+      [405]
     );
     logger.debug(`Created originless record ${record}`);
   }
@@ -162,7 +160,9 @@ async function deleteOriginlessRecord(
     await cloudflareAPI(
       token,
       `/zones/${zone.id}/dns_records/${originlessRecord.id}`,
-      'DELETE'
+      'DELETE',
+      null,
+      [404]
     );
   } else {
     logger.debug('Origin record detected, skipping');
@@ -306,47 +306,40 @@ async function createRoute(
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
-  const domains = await listWorkerDomains(token, account);
-  if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
-    logger.debug(`Attaching ${worker} to domain ${domain}`);
-    await cloudflareAPI(
-      token,
-      `/accounts/${account}/workers/domains`,
-      'PUT',
-      {
-        environment: 'production',
-        hostname,
-        service: worker,
-        zone_id: zone.id
-      },
-      true
-    );
-  }
+  logger.debug(`Attaching ${worker} to domain ${domain}`);
+  await cloudflareAPI(
+    token,
+    `/accounts/${account}/workers/domains`,
+    'PUT',
+    {
+      environment: 'production',
+      hostname,
+      service: worker,
+      zone_id: zone.id
+    },
+    [409]
+  );
   await createOriginlessRecord(token, account, hostname);
-  const routes = await listWorkerRoutes(token, account);
-  if (routes.filter((x: any) => x.pattern == route.pattern).length == 0) {
-    logger.debug(`Adding worker route for pattern ${route.pattern}`);
-    await cloudflareAPI(
-      token,
-      `/zones/${zone.id}/workers/routes`,
-      'POST',
-      {
-        pattern: route.pattern,
-        script: worker
-      },
-      true
-    );
-    logger.debug(
-      `Worker route for pattern ${route.pattern} added successfully`
-    );
-  }
+  logger.debug(`Adding worker route for pattern ${route.pattern}`);
+  await cloudflareAPI(
+    token,
+    `/zones/${zone.id}/workers/routes`,
+    'POST',
+    {
+      pattern: route.pattern,
+      script: worker
+    },
+    [409]
+  );
+  logger.debug(`Worker route for pattern ${route.pattern} added successfully`);
 }
 
 // destroy originless record if necessary
 async function deleteRoute(
   token: string,
   account: string,
-  route: Route
+  route: Route,
+  worker: string
 ): Promise<any> {
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');

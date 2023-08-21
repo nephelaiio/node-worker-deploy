@@ -1,0 +1,186 @@
+---
+name: routing
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  routing:
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      WRANGLER_SEND_METRICS: false
+      OWNER: ${{ github.repository_owner }}
+      REPOSITORY: ${{ github.repository }}
+      BRANCH: ${{ github.head_ref }}
+      CUSTOM_DOMAIN: nephelai.io
+    if: github.event.pull_request.type != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install utilities
+        run: sudo apt-get install -y jq httpie
+
+      - name: Build project
+        run: npm run build --production
+
+      - name: Set worker name envvar
+        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}-${GITHUB_WORKFLOW}" >> $GITHUB_ENV
+
+      - name: Set worker fqdn envvar
+        run: echo "FQDN=${WORKER}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
+
+      - name: Clean previous records for custom domain
+        run: >
+          records=$(npx cfcli --domain ${CUSTOM_DOMAIN} --type A --format json find ${FQDN} ${CONTENT} | jq '. | length' -r);
+          if [[ $records -gt 0 ]]; then
+            npx cfcli --domain ${CUSTOM_DOMAIN} find ${FQDN} --format json |
+              jq '. | map(("--type " + .type + " " + .name + " " + .content)) | .[]' -r |
+              xargs npx cfcli --domain ${CUSTOM_DOMAIN} rm
+          fi
+        env:
+          CF_API_KEY: ${{ secrets.CF_ACCOUNT_TOKEN }}
+
+      - name: Deploy Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
+              --route "$FQDN/hello" \
+              --route "$FQDN/hola";
+
+      - name: Test custom domain route /hello
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hello" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN/hello" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Test custom domain route /hola
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hola" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Test custom domain route /hallo
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hallo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 0;
+            fi;
+
+      - name: Update Cloudflare Worker routes
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
+              --route "$FQDN/hello" \
+              --route "$FQDN/hallo";
+
+      - name: Test custom domain route /hello
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hello" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Test custom domain route /hola
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hola" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 0;
+            fi;
+
+      - name: Test custom domain route /hallo
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/hallo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Delete Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run delete -- \
+              --verbose \
+              --name "$WORKER"
