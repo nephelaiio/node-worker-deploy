@@ -13,7 +13,6 @@ function execute(
     logger.debug(`Executing '${cmd}'`);
     const output = execSync(cmd, {
       encoding: 'utf-8',
-      shell: true,
       timeout: 30000
     }).toString();
     logger.debug(`'${cmd}' executed successfully`);
