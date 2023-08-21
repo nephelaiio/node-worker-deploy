@@ -103,7 +103,7 @@ async function deploy(
       const publishScript = `${publishCmd} -- ${publishArgs}`;
       const routeDeletes = delRoutes.map((r) => {
         logger.debug(`Deleting route ${r.pattern}`);
-        return deleteRoute(token, accountId, r);
+        return deleteRoute(token, accountId, r, name);
       });
       await Promise.all(routeDeletes);
       const publishOutput = cli(publishScript.trim());

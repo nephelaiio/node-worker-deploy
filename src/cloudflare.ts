@@ -260,7 +260,7 @@ async function listWorkerDomains(
   const domains = request.result;
   if (domains) {
     logger.debug(`Found ${domains.length} worker domains`);
-    workerDomains = domains.filter((x: any) => x.service == worker);
+    const workerDomains = domains.filter((x: any) => x.service == worker);
     logger.debug(
       `Found ${workerDomains.length} domains matching worker '${worker}'`
     );
@@ -307,12 +307,11 @@ async function listWorkerRoutes(
   const routes = await Promise.all(
     workerDomains.map((x: any) => x.zone_id).map(workerRoutes)
   );
-  const workerRoutes = routes.filter((x: any) => x.script == worker);
-  if (workerRoutes) {
-    workerRoutes.flat().map((x) => {
+  if (routes) {
+    routes.flat().map((x) => {
       logger.debug(`Found route ${x.pattern}`);
     });
-    return workerRoutes.flat();
+    return routes.flat();
   } else {
     logger.debug('No routes found');
     return [];
@@ -370,7 +369,8 @@ async function createRoute(
 async function deleteRoute(
   token: string,
   account: string,
-  route: Route
+  route: Route,
+  worker: string
 ): Promise<any> {
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');
@@ -386,7 +386,7 @@ async function deleteRoute(
   logger.debug(
     `Worker route for pattern ${route.pattern} deleted successfully`
   );
-  const domainRoutes = await listWorkerDomainRoutes(token, zone.id);
+  const domainRoutes = await listWorkerDomainRoutes(token, zone.id, worker);
   const matchingRoutes = domainRoutes.filter(
     (x: any) => x.pattern.split('/')[0] == hostname
   );
