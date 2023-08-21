@@ -251,7 +251,7 @@ async function getZone(
 async function listWorkerDomains(
   token: string,
   account: string,
-  worker: string | null = null
+  worker: string
 ): Promise<any> {
   logger.debug(`Listing worker domains for account '${account}'`);
   const request = await cloudflareAPI(
@@ -275,7 +275,7 @@ async function listWorkerDomains(
 async function listWorkerDomainRoutes(
   token: string,
   domain: string,
-  worker: string | null = null
+  worker: string
 ): Promise<any> {
   logger.debug(`Fetching routes for zone '${domain}'`);
   const routeQuery = await cloudflareAPI(
@@ -301,7 +301,7 @@ async function listWorkerDomainRoutes(
 async function listWorkerRoutes(
   token: string,
   account: string,
-  worker: string | null = null
+  worker: string
 ): Promise<any> {
   logger.debug(`Fetching account worker routes`);
   const workerRoutes = async (domain: any) =>
@@ -400,7 +400,6 @@ async function deleteRoute(
     (x: any) => x.pattern.split('/')[0] == hostname
   );
   if (matchingRoutes.length == 0) {
-    logger.debug(`Deleting originless record for ${hostname}`);
     await deleteOriginlessRecord(token, account, hostname);
   }
   if (domainRoutes.length == 0) {
