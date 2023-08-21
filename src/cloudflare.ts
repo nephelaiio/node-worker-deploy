@@ -330,48 +330,34 @@ async function createRoute(
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
-  const domains = await listWorkerDomains(token, account, worker);
-  if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
-    logger.debug(`Attaching ${worker} to domain ${domain}`);
-    await cloudflareAPI(
-      token,
-      `/accounts/${account}/workers/domains`,
-      'PUT',
-      {
-        environment: 'production',
-        hostname,
-        service: worker,
-        zone_id: zone.id
-      },
-      [200, 409]
-    );
-  }
+  logger.debug(`Attach ${worker} to domain ${domain}`);
+  await cloudflareAPI(
+    token,
+    `/accounts/${account}/workers/domains`,
+    'PUT',
+    {
+      environment: 'production',
+      hostname,
+      service: worker,
+      zone_id: zone.id
+    },
+    [200, 409]
+  );
   await createOriginlessRecord(token, account, hostname);
-  const workerRoutes = await listWorkerRoutes(token, account, worker);
-  if (workerRoutes.length == 0) {
-    logger.debug(`No routes found for worker ${worker}`);
-  } else {
-    const workerPatterns = workerRoutes.map((x: any) => x.pattern);
-    logger.debug(`Found routes: ${workerPatterns} for worker ${worker}`);
-  }
-  if (workerRoutes.filter((x: any) => x.pattern == route.pattern).length == 0) {
-    logger.debug(`Adding worker route for pattern ${route.pattern}`);
-    await cloudflareAPI(
-      token,
-      `/zones/${zone.id}/workers/routes`,
-      'POST',
-      {
-        pattern: route.pattern,
-        script: worker
-      },
-      [409]
-    );
-    logger.debug(
-      `Worker route for pattern ${route.pattern} added successfully`
-    );
-  } else {
-    logger.debug(`Worker route for pattern ${route.pattern} already exists`);
-  }
+  logger.debug(`Adding worker route for pattern ${route.pattern}`);
+  await cloudflareAPI(
+    token,
+    `/zones/${zone.id}/workers/routes`,
+    'POST',
+    {
+      pattern: route.pattern,
+      script: worker
+    },
+    [409]
+  );
+  logger.debug(
+    `Worker route for pattern ${route.pattern} added successfully`
+  );
 }
 
 // destroy originless record if necessary
@@ -396,27 +382,19 @@ async function deleteRoute(
     `Worker route for pattern ${route.pattern} deleted successfully`
   );
   const domainRoutes = await listWorkerDomainRoutes(token, zone.id, worker);
-  const matchingRoutes = domainRoutes.filter(
-    (x: any) => x.pattern.split('/')[0] == hostname
-  );
-  if (matchingRoutes.length == 0) {
-    await deleteOriginlessRecord(token, account, hostname);
-  }
-  if (domainRoutes.length == 0) {
-    const domains = await listWorkerDomains(token, account, worker);
-    const matchDomains = domains.filter((x: any) => x.zone_id == zone.id);
-    if (matchDomains.length > 0) {
-      const domain = matchDomains[0];
-      logger.debug(`Detaching domain ${domain.zone_name} from workers`);
-      await cloudflareAPI(
-        token,
-        `/accounts/${account}/workers/domains/${domain.id}`,
-        'DELETE',
-        null,
-        [404]
-      );
-      logger.debug(`Detached domain ${domain.zone_name} from workers`);
-    }
+  const domains = await listWorkerDomains(token, account, worker);
+  const matchDomains = domains.filter((x: any) => x.zone_id == zone.id);
+  if (matchDomains.length > 0) {
+    const domain = matchDomains[0];
+    logger.debug(`Detaching domain ${domain.zone_name} from workers`);
+    await cloudflareAPI(
+      token,
+      `/accounts/${account}/workers/domains/${domain.id}`,
+      'DELETE',
+      null,
+      [404]
+    );
+    logger.debug(`Detached domain ${domain.zone_name} from workers`);
   }
   return response.result;
 }
