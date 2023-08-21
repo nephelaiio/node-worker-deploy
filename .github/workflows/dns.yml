@@ -82,14 +82,14 @@ jobs:
 
       - name: Test custom domain resolution
         run: >
-          RETRIES=6;
-          SLEEP=30;
-          while [[ $RETRIES > 0 ]]; do
-            RETRIES=$(( RETRIES - 1 ));
+          retries=6;
+          sleep=30;
+          while [[ $retries > 0 ]]; do
+            retries=$(( retries - 1 ));
             address="$(dig +short $FQDN @1.1.1.1 | head -1)";
             if [ -z "$address" ]; then
               echo "dns query for record $FQDN returned NXDOMAIN";
-              sleep $SLEEP;
+              sleep $sleep;
             else
               echo "dns query for record $FQDN returned $address";
               exit 0;
@@ -111,17 +111,17 @@ jobs:
 
       - name: Test custom domain resolution
         run: >
-          RETRIES=6;
-          SLEEP=30;
-          while [[ $RETRIES > 0 ]]; do
-            RETRIES=$(( RETRIES - 1 ));
+          retries=6;
+          sleep=30;
+          while [[ $retries > 0 ]]; do
+            retries=$(( retries - 1 ));
             address="$(dig +short $FQDN @1.1.1.1 | head -1)";
             if [ -z "$address" ]; then
               echo "dns query for record $FQDN returned NXDOMAIN";
               exit 0;
             else
               echo "dns query for record $FQDN returned $address";
-              sleep $SLEEP;
+              sleep $sleep;
             fi;
           done;
           echo "dns record $FQDN was not removed on time";
@@ -175,7 +175,7 @@ jobs:
       - name: Test custom domain endpoint
         run: >
           address="$(dig +short $FQDN @1.1.1.1 | head -1)";
-          retries=6
+          retries=6 ;
           while [ -z "$address" ]; do
             if [[ $retries == 0 ]]; then
               exit 1
