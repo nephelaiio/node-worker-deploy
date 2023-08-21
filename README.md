@@ -9,7 +9,7 @@ Cloudflare Worker and Secret deployments
 
 ## Usage
 
-Apply the following steps in your CI configuration at the appropriate stages
+Add the following steps to your CI configuration at the appropriate stages
 
 ```
 - name: Deploy Cloudflare worker with custom domain

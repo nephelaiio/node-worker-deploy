@@ -1,0 +1,89 @@
+---
+name: deploy
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      WRANGLER_SEND_METRICS: false
+      OWNER: ${{ github.repository_owner }}
+      REPOSITORY: ${{ github.repository }}
+      BRANCH: ${{ github.head_ref }}
+      CUSTOM_DOMAIN: nephelai.io
+    if: github.event.pull_request.type != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install utilities
+        run: sudo apt-get install -y jq httpie
+
+      - name: Build project
+        run: npm run build --production
+
+      - name: Set worker name envvar
+        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}-${GITHUB_WORKFLOW}" >> $GITHUB_ENV
+
+      - name: Set worker fqdn envvar
+        run: echo "FQDN=${WORKER}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
+
+      - name: Deploy Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER"
+        id: deploy
+
+      - name: Test deployed Cloudflare worker
+        run: >
+          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
+
+      - name: Delete Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run delete -- \
+              --verbose \
+              --name "$WORKER"
+
+      - name: Test Cloudflare worker deletion
+        run: >
+          retries=12;
+          while [ $retries -gt 0 ]; do
+              retries=$((retries - 1));
+              output="${{ steps.deploy.outputs.stdout }}";
+              url="${output//[$'\t\r\n ']}";
+              echo "testing url $url"
+              return_header=$(curl -sD- $url | head -1);
+              return_code=$(echo "$return_header" | awk '{print $2}');
+              echo "return code is $return_code";
+              if [[ "$return_code" == "404" ]]; then
+                  exit 0;
+              fi;
+              sleep 10;
+              echo "retrying ..."
+          done;
+          exit 1;
