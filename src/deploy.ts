@@ -96,20 +96,20 @@ async function deploy(
       const currentRoutes = (
         await listWorkerRoutes(token, accountId, name)
       ).flat();
+      logger.debug('Existing routes:');
+      currentRoutes.map(JSON.stringify).map(logger.debug);
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
       const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
       const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
       const publishScript = `${publishCmd} -- ${publishArgs}`;
-      logger.debug('Routes to delete:')
-      delRoutes.result.map(JSON.stringify).map(logger.debug);
+      logger.debug('Routes to delete: ${delRoutes}');
       const routeDeletes = delRoutes.map((r) =>
         deleteRoute(token, accountId, r, name)
       );
       await Promise.all(routeDeletes);
       const publishOutput = cli(publishScript.trim());
-      logger.debug('Routes to add:')
-      addRoutes.result.map(JSON.stringify).map(logger.debug);
+      logger.debug('Routes to add: ${addRoutes}');
       const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
       const routeAdditions = addRoutes.map((r) =>
         createRoute(token, accountId, name, r)
