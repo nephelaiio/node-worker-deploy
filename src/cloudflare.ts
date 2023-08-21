@@ -50,8 +50,9 @@ const cloudflareAPI = async (
         logger.debug(`Got response ${response.status} for ${uri}`);
         return method != 'DELETE' ? response : null;
       } else {
-        logger.error(`Unexpected response ${response.status} for ${uri}`);
-        throw new Error(`Unexpected response ${response.status} for ${uri}`);
+        const error = `Unexpected response ${response.status} for ${method} ${uri}`;
+        logger.error(error);
+        throw new Error(error);
       }
     }
   }
@@ -353,10 +354,14 @@ async function createRoute(
   }
   if (workerRoutes.filter((x: any) => x.pattern == route.pattern).length == 0) {
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
-    await cloudflareAPI(token, `/zones/${zone.id}/workers/routes`, 'POST', {
-      pattern: route.pattern,
-      script: worker
-    });
+    await cloudflareAPI(
+      token,
+      `/zones/${zone.id}/workers/routes`, 'POST',
+      {
+        pattern: route.pattern,
+        script: worker
+      },
+      [409]);
     logger.debug(
       `Worker route for pattern ${route.pattern} added successfully`
     );
