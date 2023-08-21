@@ -247,7 +247,11 @@ async function getZone(
   }
 }
 
-async function listWorkerDomains(token: string, account: string): Promise<any> {
+async function listWorkerDomains(
+  token: string,
+  account: string,
+  worker: string
+): Promise<any> {
   logger.debug(`Listing worker domains for account '${account}'`);
   const request = await cloudflareAPI(
     token,
@@ -256,9 +260,7 @@ async function listWorkerDomains(token: string, account: string): Promise<any> {
   const domains = request.result;
   if (domains) {
     logger.debug(`Found ${domains.length} worker domains`);
-    logger.debug('Worker domains:');
-    domains.map(JSON.stringify).map(logger.debug);
-    return domains;
+    return domains.filter((x: any) => x.service == 'worker');
   } else {
     logger.debug('No worker domains found');
     return [];
@@ -267,7 +269,8 @@ async function listWorkerDomains(token: string, account: string): Promise<any> {
 
 async function listWorkerDomainRoutes(
   token: string,
-  domain: string
+  domain: string,
+  worker: string
 ): Promise<any> {
   logger.debug(`Fetching routes for zone '${domain}'`);
   const routeQuery = await cloudflareAPI(
@@ -282,26 +285,31 @@ async function listWorkerDomainRoutes(
     return [];
   } else {
     const routes = routeQuery.result;
-    logger.debug(
-      `Found '${routes.length}' matching routes for zone '${domain}'`
-    );
+    logger.debug(`Found '${routes.length}' routes for zone '${domain}'`);
+    logger.debug(`Worker routes:`);
+    routes.map(JSON.stringify).map(logger.debug);
     return routes;
   }
 }
 
-async function listWorkerRoutes(token: string, account: string): Promise<any> {
+async function listWorkerRoutes(
+  token: string,
+  account: string,
+  worker: string
+): Promise<any> {
   logger.debug(`Fetching account worker routes`);
-  const domainRoutes = async (domain: any) =>
-    listWorkerDomainRoutes(token, domain);
-  const domains = await listWorkerDomains(token, account);
+  const workerRoutes = async (domain: any) =>
+    listWorkerDomainRoutes(token, domain, worker);
+  const workerDomains = await listWorkerDomains(token, account, worker);
   const routes = await Promise.all(
-    domains.map((x: any) => x.zone_id).map(domainRoutes)
+    workerDomains.map((x: any) => x.zone_id).map(workerRoutes)
   );
-  if (routes) {
-    routes.flat().map((x) => {
+  const workerRoutes = routes.filter((x: any) => x.script == worker);
+  if (workerRoutes) {
+    workerRoutes.flat().map((x) => {
       logger.debug(`Found route ${x.pattern}`);
     });
-    return routes.flat();
+    return workerRoutes.flat();
   } else {
     logger.debug('No routes found');
     return [];
@@ -317,7 +325,7 @@ async function createRoute(
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
-  const domains = await listWorkerDomains(token, account);
+  const domains = await listWorkerDomains(token, account, worker);
   if (domains.filter((x: any) => x.zone_id == zone.id).length == 0) {
     logger.debug(`Attaching ${worker} to domain ${domain}`);
     await cloudflareAPI(
@@ -334,8 +342,7 @@ async function createRoute(
     );
   }
   await createOriginlessRecord(token, account, hostname);
-  const routes = await listWorkerRoutes(token, account);
-  const workerRoutes = routes.filter((x: any) => x.script == worker);
+  const workerRoutes = await listWorkerRoutes(token, account, worker);
   if (workerRoutes.length == 0) {
     logger.debug(`No routes found for worker ${worker}`);
   } else {
@@ -385,7 +392,7 @@ async function deleteRoute(
     await deleteOriginlessRecord(token, account, hostname);
   }
   if (domainRoutes.length == 0) {
-    const domains = await listWorkerDomains(token, account);
+    const domains = await listWorkerDomains(token, account, worker);
     const matchDomains = domains.filter((x: any) => x.zone_id == zone.id);
     if (matchDomains.length > 0) {
       const domain = matchDomains[0];
