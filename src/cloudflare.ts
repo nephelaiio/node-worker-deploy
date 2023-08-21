@@ -355,9 +355,7 @@ async function createRoute(
     },
     [409]
   );
-  logger.debug(
-    `Worker route for pattern ${route.pattern} added successfully`
-  );
+  logger.debug(`Worker route for pattern ${route.pattern} added successfully`);
 }
 
 // destroy originless record if necessary
@@ -381,7 +379,6 @@ async function deleteRoute(
   logger.debug(
     `Worker route for pattern ${route.pattern} deleted successfully`
   );
-  const domainRoutes = await listWorkerDomainRoutes(token, zone.id, worker);
   const domains = await listWorkerDomains(token, account, worker);
   const matchDomains = domains.filter((x: any) => x.zone_id == zone.id);
   if (matchDomains.length > 0) {

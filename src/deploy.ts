@@ -101,17 +101,15 @@ async function deploy(
       const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
       const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
       const publishScript = `${publishCmd} -- ${publishArgs}`;
-      const routeDeletes = delRoutes.map((r) => {
-        logger.debug(`Deleting route ${r.pattern}`);
-        return deleteRoute(token, accountId, r, name);
-      });
+      const routeDeletes = delRoutes.map((r) =>
+        deleteRoute(token, accountId, r, name)
+      );
       await Promise.all(routeDeletes);
       const publishOutput = cli(publishScript.trim());
       const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
-      const routeAdditions = addRoutes.map((r) => {
-        logger.debug(`Adding route ${r.pattern}`);
-        return createRoute(token, accountId, name, r);
-      });
+      const routeAdditions = addRoutes.map((r) =>
+        createRoute(token, accountId, name, r)
+      );
       await Promise.all(routeAdditions);
       const secretCmd = `npm exec wrangler secret put -- --name ${name}`;
       Object.entries(secrets)
