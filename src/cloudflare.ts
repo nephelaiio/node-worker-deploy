@@ -356,12 +356,14 @@ async function createRoute(
     logger.debug(`Adding worker route for pattern ${route.pattern}`);
     await cloudflareAPI(
       token,
-      `/zones/${zone.id}/workers/routes`, 'POST',
+      `/zones/${zone.id}/workers/routes`,
+      'POST',
       {
         pattern: route.pattern,
         script: worker
       },
-      [409]);
+      [409]
+    );
     logger.debug(
       `Worker route for pattern ${route.pattern} added successfully`
     );
