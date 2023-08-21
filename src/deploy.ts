@@ -93,9 +93,7 @@ async function deploy(
     async () => {
       const configRoutes = (config.routes || []) as Route[];
       const publishRoutes = [...routeData, ...configRoutes];
-      const currentRoutes = (
-        await listWorkerRoutes(token, accountId, name)
-      ).flat();
+      const currentRoutes = (await listWorkerRoutes(token, accountId)).flat();
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
       const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
