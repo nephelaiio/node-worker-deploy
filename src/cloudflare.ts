@@ -275,7 +275,7 @@ async function listWorkerDomains(
 async function listWorkerDomainRoutes(
   token: string,
   domain: string,
-  worker: string
+  worker: string | null = null
 ): Promise<any> {
   logger.debug(`Fetching routes for zone '${domain}'`);
   const routeQuery = await cloudflareAPI(
