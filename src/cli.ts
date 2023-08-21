@@ -198,8 +198,8 @@ async function main() {
           }
         }
         console.log(url);
+        process.exit(0);
       });
-      process.exit(0);
     });
 
   program.command('delete').action((_) => {
