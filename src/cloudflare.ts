@@ -260,7 +260,11 @@ async function listWorkerDomains(
   const domains = request.result;
   if (domains) {
     logger.debug(`Found ${domains.length} worker domains`);
-    return domains.filter((x: any) => x.service == 'worker');
+    workerDomains = domains.filter((x: any) => x.service == worker);
+    logger.debug(
+      `Found ${workerDomains.length} domains matching worker '${worker}'`
+    );
+    return workerDomains;
   } else {
     logger.debug('No worker domains found');
     return [];
@@ -286,9 +290,8 @@ async function listWorkerDomainRoutes(
   } else {
     const routes = routeQuery.result;
     logger.debug(`Found '${routes.length}' routes for zone '${domain}'`);
-    logger.debug(`Worker routes:`);
-    routes.map(JSON.stringify).map(logger.debug);
-    return routes;
+    const workerRoutes = routes.filter((x: any) => x.service == worker);
+    return workerRoutes;
   }
 }
 
