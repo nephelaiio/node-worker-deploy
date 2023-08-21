@@ -199,6 +199,7 @@ async function main() {
         }
         console.log(url);
       });
+      process.exit(0);
     });
 
   program.command('delete').action((_) => {
@@ -254,6 +255,7 @@ async function main() {
           }
         }
       }
+      process.exit(0);
     });
   });
   program.parse(process.argv);
