@@ -84,7 +84,7 @@ async function deploy(
   );
   const configString = fs.readFileSync(`${CWD}/wrangler.toml`).toString();
   const config = parseTOML(configString);
-  wrangler(
+  await wrangler(
     (cfg) => {
       cfg.name = name;
       cfg.account_id = accountId;

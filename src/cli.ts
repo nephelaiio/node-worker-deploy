@@ -164,7 +164,8 @@ async function main() {
       if (options.subdomain == '') {
         checks.push(checkWorkerSubdomain());
       }
-      Promise.all(checks).then(async () => {
+      await Promise.all(checks)
+      const action = async () => {
         logger.info(`Deploying worker ${worker}`);
         try {
           await deploy(worker, varArgs, literalArgs, secretArgs, options.route);
@@ -198,7 +199,8 @@ async function main() {
           }
         }
         console.log(url);
-      });
+      };
+      await action();
     });
 
   program.command('delete').action((_) => {
