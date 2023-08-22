@@ -5,6 +5,7 @@ import { logger } from './logger';
 
 const ORIGINLESS_TYPE = 'AAAA';
 const ORIGINLESS_CONTENT = '100::';
+const CLOUDFLARE_TIMEOUT = 10000;
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 export type Route = {
@@ -12,6 +13,22 @@ export type Route = {
   zone_id: any;
   id?: string;
 };
+
+// from https://dmitripavlutin.com/timeout-fetch-request/
+async function fetchWithTimeout(resource: string, options: any) {
+  const { timeout = CLOUDFLARE_TIMEOUT } = options;
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(resource, {
+    ...options,
+    signal: controller.signal
+  });
+  clearTimeout(id);
+
+  return response;
+}
 
 const cloudflareAPI = async (
   token: string,
@@ -28,7 +45,7 @@ const cloudflareAPI = async (
   logger.debug(`Fetching ${method} ${uri}`);
   async function fetchData(url: string) {
     if (method == 'GET' || method == 'HEAD') {
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         method,
         headers
       });
@@ -41,16 +58,22 @@ const cloudflareAPI = async (
         throw new Error(error);
       }
     } else {
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: JSON.stringify(body)
-      });
-      if (response.ok || expected_errors.some((x) => x == response.status)) {
-        logger.debug(`Got response ${response.status} for ${uri}`);
-        return method != 'DELETE' ? response : null;
-      } else {
-        const error = `Unexpected response ${response.status} for ${method} ${uri}`;
+      try {
+        const response = await fetchWithTimeout(url, {
+          method,
+          headers,
+          body: JSON.stringify(body)
+        });
+        if (response.ok || expected_errors.some((x) => x == response.status)) {
+          logger.debug(`Got response ${response.status} for ${uri}`);
+          return method != 'DELETE' ? response : null;
+        } else {
+          const error = `Unexpected response ${response.status} for ${method} ${uri}`;
+          logger.error(error);
+          throw new Error(error);
+        }
+      } catch (_: any) {
+        const error = `Timeout waiting for reponse for ${method} ${uri}`;
         logger.error(error);
         throw new Error(error);
       }
@@ -124,11 +147,14 @@ async function createOriginlessRecord(
   const domain = record.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
   logger.debug(`Querying data for record '${record}'`);
-  const request = await cloudflareAPI(
+  const requestTypes = ['A', 'AAAA', 'CNAME']
+  const recordQueries = requestTypes.map(async requestType => await cloudflareAPI(
     token,
-    `/zones/${zone.id}/dns_records?name=${record}`
-  );
-  const records = request.result;
+    `/zones/${zone.id}/dns_records?name=${record}&type=${requestType}`
+  ))
+  const recordResults = await Promise.all(recordQueries);
+  const records = recordResults.map(x => x.result).flat();
+  logger.debug(`Found records '${JSON.stringify(records)}'`);
   if (records.length == 0) {
     logger.debug(`Creating originless record ${record}`);
     await cloudflareAPI(
