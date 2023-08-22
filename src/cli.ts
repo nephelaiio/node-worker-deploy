@@ -132,7 +132,7 @@ async function main() {
           if (ySplit.length > 1) {
             return { ...x, ...{ [ySplit[0]]: ySplit[1] } };
           } else {
-            return { ...x, ...{ y } };
+            return { ...x, ...{ [y]: y } };
           }
         },
         {}
@@ -143,7 +143,7 @@ async function main() {
           if (ySplit.length > 1) {
             return { ...x, ...{ [ySplit[0]]: ySplit[1] } };
           } else {
-            return { ...x, ...{ y } };
+            return { ...x, ...{ [y]: y } };
           }
         },
         {}
@@ -154,7 +154,7 @@ async function main() {
           if (ySplit.length > 1) {
             return { ...x, ...{ [ySplit[0]]: ySplit[1] } };
           } else {
-            return { ...x, ...{ y } };
+            return { ...x, ...{ [y]: y } };
           }
         },
         {}
