@@ -13,7 +13,9 @@ async function fetch(request: Request, env: Env, _: ExecutionContext) {
 async function handleRequest(request: Request, env: Env): Promise<Response> {
   const mode = env.GITHUB_APPLY ? 'apply' : 'check';
   const worker = env.WORKER;
-  return new Response(`Hello world on ${request.url} from ${worker} using ${mode} mode`);
+  return new Response(
+    `Hello world on ${request.url} from ${worker} using ${mode} mode`
+  );
 }
 
 export default { fetch };
