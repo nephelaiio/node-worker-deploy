@@ -147,13 +147,16 @@ async function createOriginlessRecord(
   const domain = record.split('.').slice(-2).join('.');
   const zone = await getZone(token, account, domain);
   logger.debug(`Querying data for record '${record}'`);
-  const requestTypes = ['A', 'AAAA', 'CNAME']
-  const recordQueries = requestTypes.map(async requestType => await cloudflareAPI(
-    token,
-    `/zones/${zone.id}/dns_records?name=${record}&type=${requestType}`
-  ))
+  const requestTypes = ['A', 'AAAA', 'CNAME'];
+  const recordQueries = requestTypes.map(
+    async (requestType) =>
+      await cloudflareAPI(
+        token,
+        `/zones/${zone.id}/dns_records?name=${record}&type=${requestType}`
+      )
+  );
   const recordResults = await Promise.all(recordQueries);
-  const records = recordResults.map(x => x.result).flat();
+  const records = recordResults.map((x) => x.result).flat();
   logger.debug(`Found records '${JSON.stringify(records)}'`);
   if (records.length == 0) {
     logger.debug(`Creating originless record ${record}`);
