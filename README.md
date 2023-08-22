@@ -18,8 +18,9 @@ Add the following steps to your CI configuration at the appropriate stages
     npx @nephelaiio/worker-deploy -- \
        deploy \
        --verbose \
-       --literal GITHUB_APPLY:true \
-       --secret GITHUB_TOKEN:GH_TOKEN \
+       --literal LITERAL:true \
+       --variable ENVVAR \
+       --secret ENVSECRET \
        --name "$WORKER" \
        --route "$FQDN/*"
 ```

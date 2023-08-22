@@ -11,7 +11,11 @@ function execute(
   const cmd = `${mode == 'cli' ? '' : npm}${command}`;
   try {
     logger.debug(`Executing '${cmd}'`);
-    const output = execSync(cmd).toString();
+    const output = execSync(cmd, {
+      encoding: 'utf-8',
+      timeout: 30000
+    }).toString();
+    logger.debug(`'${cmd}' executed successfully`);
     return output;
   } catch (error: any) {
     const { status } = error;

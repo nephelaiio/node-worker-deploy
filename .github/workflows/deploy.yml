@@ -53,6 +53,7 @@ jobs:
             npm run deploy -- \
               --verbose \
               --literal GITHUB_APPLY:true \
+              --variable WORKER \
               --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER"
         id: deploy
