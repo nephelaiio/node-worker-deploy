@@ -94,7 +94,7 @@ async function deploy(
       const configRoutes = (config.routes || []) as Route[];
       const publishRoutes = [...routeData, ...configRoutes];
       const allRoutes = (await listWorkerRoutes(token, accountId)).flat();
-      const currentRoutes = allRoutes.filter((r) => r.service == name);
+      const currentRoutes = allRoutes.filter((r) => r.script == name);
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
       logger.debug(`Account routes: ${JSON.stringify(allRoutes)}`);
