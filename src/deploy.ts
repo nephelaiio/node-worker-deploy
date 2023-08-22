@@ -93,13 +93,15 @@ async function deploy(
     async () => {
       const configRoutes = (config.routes || []) as Route[];
       const publishRoutes = [...routeData, ...configRoutes];
-      const currentRoutes = (await listWorkerRoutes(token, accountId)).flat();
+      const allRoutes = (await listWorkerRoutes(token, accountId)).flat();
+      const currentRoutes = allRoutes.filter(r => r.service == name)
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
-      logger.debug(`Existing routes: ${JSON.stringify(currentRoutes)}`)
-      logger.debug(`Requested routes: ${JSON.stringify(publishRoutes)}`)
-      logger.debug(`Routes to delete: ${JSON.stringify(delRoutes)}`)
-      logger.debug(`Routes to create: ${JSON.stringify(addRoutes)}`)
+      logger.debug(`Account routes: ${JSON.stringify(allRoutes)}`)
+      logger.debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`)
+      logger.debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`)
+      logger.debug(`Worker routes to delete: ${JSON.stringify(delRoutes)}`)
+      logger.debug(`Worker routes to create: ${JSON.stringify(addRoutes)}`)
       const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
       const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
       const publishScript = `${publishCmd} -- ${publishArgs}`;
