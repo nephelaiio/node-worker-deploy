@@ -67,8 +67,82 @@ jobs:
               --literal GITHUB_APPLY:true \
               --secret GITHUB_TOKEN:GH_TOKEN \
               --name "$WORKER" \
+              --route "$FQDN/*";
+
+      - name: Test default domain route /
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Test custom domain route /foo
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/foo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Update Cloudflare Worker routes
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
               --route "$FQDN/hello" \
               --route "$FQDN/hola";
+
+      - name: Test default domain route /
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 0;
+            fi;
+
+      - name: Test custom domain route /foo
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/foo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 0;
+            fi;
 
       - name: Test custom domain route /hello
         uses: nick-fields/retry@v2
@@ -170,6 +244,34 @@ jobs:
           command: >
             ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
             return_header=$(curl -sk "https://$FQDN/hallo" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
+            return_code=$(echo "$return_header" | awk '{print $2}');
+            echo "return code is $return_code";
+            if [[ "$return_code" != "200" ]]; then
+              exit 1;
+            fi;
+            curl -sk "https://$FQDN" --resolve "$FQDN:443:$ADDRESS" | grep "^Hello world"
+
+      - name: Update Cloudflare Worker routes
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            echo Deploying worker "$WORKER"; \
+            npm run deploy -- \
+              --verbose \
+              --literal GITHUB_APPLY:true \
+              --secret GITHUB_TOKEN:GH_TOKEN \
+              --name "$WORKER" \
+              --route "$FQDN/*";
+
+      - name: Test default domain route /
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 6
+          retry_on: error
+          timeout_seconds: 10
+          command: >
+            ADDRESS="$(dig +short $FQDN @1.1.1.1 | head -1)";
+            return_header=$(curl -sk "https://$FQDN/" --resolve "$FQDN:443:$ADDRESS" -D- | head -1);
             return_code=$(echo "$return_header" | awk '{print $2}');
             echo "return code is $return_code";
             if [[ "$return_code" != "200" ]]; then
