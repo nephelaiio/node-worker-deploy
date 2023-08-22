@@ -164,7 +164,7 @@ async function main() {
       if (options.subdomain == '') {
         checks.push(checkWorkerSubdomain());
       }
-      await Promise.all(checks)
+      await Promise.all(checks);
       const action = async () => {
         logger.info(`Deploying worker ${worker}`);
         try {
