@@ -338,8 +338,7 @@ async function createRoute(
 async function deleteRoute(
   token: string,
   account: string,
-  route: Route,
-  worker: string
+  route: Route
 ): Promise<any> {
   const hostname = route.pattern.split('/')[0];
   const domain = hostname.split('.').slice(-2).join('.');
@@ -348,7 +347,9 @@ async function deleteRoute(
   const response = await cloudflareAPI(
     token,
     `/zones/${zone.id}/workers/routes/${route.id}`,
-    'DELETE'
+    'DELETE',
+    null,
+    [404]
   );
   logger.debug(
     `Worker route for pattern ${route.pattern} deleted successfully`
@@ -370,7 +371,9 @@ async function deleteRoute(
       await cloudflareAPI(
         token,
         `/accounts/${account}/workers/domains/${domain.id}`,
-        'DELETE'
+        'DELETE',
+        null,
+        [404]
       );
       logger.debug(`Detached domain ${domain.zone_name} from workers`);
     }
