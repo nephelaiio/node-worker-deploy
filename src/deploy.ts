@@ -16,7 +16,7 @@ import {
   deleteRoute
 } from './cloudflare';
 import { cli } from './npm';
-import { project, branch } from './git';
+import { project } from './git';
 
 async function workerURL(
   name: string,
@@ -116,4 +116,4 @@ async function deploy(
   );
 }
 
-export { deploy, wrangler, workerURL, project, branch };
+export { deploy, wrangler, workerURL, project };

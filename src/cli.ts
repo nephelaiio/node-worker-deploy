@@ -6,12 +6,7 @@ import { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CWD } from './constants';
 import { logger, verbose, quiet, info } from './logger';
 import { getWorker } from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
-import {
-  deploy,
-  wrangler,
-  workerURL,
-  project
-} from './deploy';
+import { deploy, wrangler, workerURL, project } from './deploy';
 import { getWorkerSubdomain } from './cloudflare';
 import { exec } from './npm';
 
@@ -93,7 +88,7 @@ async function main() {
       new Option('-k, --insecure', 'disable ssl verification').default(false)
     )
     .requiredOption('-n, --name <string>', 'worker deployment name')
-    .option('-e, --environment <env>', 'repository environment', null)
+    .option('-e, --environment <env>', 'repository environment', '')
     .hook('preAction', async (program, _) => {
       const isVerbose = program.opts()['verbose'];
       const isQuiet = program.opts()['quiet'];
@@ -202,66 +197,64 @@ async function main() {
       await action();
     });
 
-  program
-    .command('delete')
-    .action(async (_) => {
-      Promise.all(checks).then(async () => {
-        const projectName = await project(program.opts()['remote']);
-        const worker = program.opts()['name'];
-        const environment = program.opts()['environment'];
-        if (worker != projectName) {
-          const deployment = await getWorker(
-            `${CLOUDFLARE_API_TOKEN}`,
-            `${CLOUDFLARE_ACCOUNT_ID}`,
-            worker
+  program.command('delete').action(async (_) => {
+    Promise.all(checks).then(async () => {
+      const projectName = await project(program.opts()['remote']);
+      const worker = program.opts()['name'];
+      const environment = program.opts()['environment'];
+      if (worker != projectName) {
+        const deployment = await getWorker(
+          `${CLOUDFLARE_API_TOKEN}`,
+          `${CLOUDFLARE_ACCOUNT_ID}`,
+          worker
+        );
+        if (deployment) {
+          logger.info(`Deleting worker ${worker}`);
+          const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
+          wrangler(
+            (cfg) => {
+              cfg.name = worker;
+              cfg.account_id = accountId;
+              return cfg;
+            },
+            () => {
+              exec(`wrangler delete --name ${worker}`);
+            }
           );
-          if (deployment) {
-            logger.info(`Deleting worker ${worker}`);
-            const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
-            wrangler(
-              (cfg) => {
-                cfg.name = worker;
-                cfg.account_id = accountId;
-                return cfg;
-              },
-              () => {
-                exec(`wrangler delete --name ${worker}`);
-              }
-            );
-          } else {
-            logger.debug(`Worker ${worker} not found`);
-          }
-          if (environment) {
-            if (process.env['GITHUB_ACTIONS'] == 'true') {
-              const githubToken = process.env['GITHUB_TOKEN'];
-              const githubRepo = process.env['GITHUB_REPOSITORY'];
-              if (githubToken) {
-                if (githubRepo) {
-                  logger.debug(
-                    `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
-                  );
-                  await cleanGithubDeployments(
-                    `${githubToken}`,
-                    `${githubRepo}`,
-                    `${environment}`
-                  );
-                } else {
-                  logger.debug(
-                    'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
-                  );
-                }
+        } else {
+          logger.debug(`Worker ${worker} not found`);
+        }
+        if (environment) {
+          if (process.env['GITHUB_ACTIONS'] == 'true') {
+            const githubToken = process.env['GITHUB_TOKEN'];
+            const githubRepo = process.env['GITHUB_REPOSITORY'];
+            if (githubToken) {
+              if (githubRepo) {
+                logger.debug(
+                  `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
+                );
+                await cleanGithubDeployments(
+                  `${githubToken}`,
+                  `${githubRepo}`,
+                  `${environment}`
+                );
               } else {
                 logger.debug(
-                  'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
+                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
                 );
               }
+            } else {
+              logger.debug(
+                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
+              );
             }
-          } else {
-            logger.debug('no environment configuration requested');
           }
+        } else {
+          logger.debug('no environment configuration requested');
         }
-      });
+      }
     });
+  });
   program.parse(process.argv);
 }
 
