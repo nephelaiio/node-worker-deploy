@@ -24,6 +24,7 @@ async function project(remote = ''): Promise<string> {
 }
 
 async function branch(name = ''): Promise<string> {
+  logger.debug(`CWD: ${CWD}`);
   const gitBranch = await git.currentBranch({ fs, dir: CWD });
   const branch = name != '' ? name : gitBranch;
   return `${branch}`;
