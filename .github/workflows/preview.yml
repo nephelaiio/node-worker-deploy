@@ -55,7 +55,7 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+              --secret GITHUB_TOKEN \
               --name "$WORKER"
         id: deploy
 
