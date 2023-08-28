@@ -181,7 +181,7 @@ async function main() {
         if (process.env['GITHUB_ACTIONS'] == 'true') {
           if (githubToken) {
             if (githubRepo) {
-              branch().then((environment) => {
+              branch().then(async (environment) => {
                 logger.debug(
                   `Registering deployment for github repository ${githubRepo}, environment ${environment}`
                 );
@@ -246,7 +246,7 @@ async function main() {
             const githubRepo = process.env['GITHUB_REPOSITORY'];
             if (githubToken) {
               if (githubRepo) {
-                branch().then((environment) => {
+                branch().then(async (environment) => {
                   logger.debug(
                     `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
                   );
