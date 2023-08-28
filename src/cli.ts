@@ -119,12 +119,16 @@ async function main() {
     .option('-v, --variable <string>', 'worker variable (list)', collect, [])
     .option('-r, --route <fqdn>', 'worker route [list]', collect, [])
     .addOption(
+      new Option('-e, --environment <fqdn>', 'repository environment').default('')
+    )
+    .addOption(
       new Option('-d, --subdomain <string>', 'worker subdomain').default('')
     )
     .action(async (options) => {
       const githubToken = process.env['GITHUB_TOKEN'];
       const githubRepo = process.env['GITHUB_REPOSITORY'];
       const workerArg = program.opts()['name'];
+      const environmentArg = program.opts()['environment'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
@@ -177,16 +181,24 @@ async function main() {
         if (process.env['GITHUB_ACTIONS'] == 'true') {
           if (githubToken) {
             if (githubRepo) {
-              const environment = await branch();
-              logger.debug(
-                `Registering deployment for github repository ${githubRepo}, environment ${environment}`
-              );
-              await createGithubDeployment(
-                `${githubToken}`,
-                `${githubRepo}`,
-                `${environment}`,
-                url
-              );
+              const gitBranch = await branch();
+              const environment = environmentArg ? environmentArg : gitBranch;
+              if (environment) {
+                logger.debug(
+                  `Registering deployment for github repository ${githubRepo}, environment ${environment}`
+                );
+                await createGithubDeployment(
+                  `${githubToken}`,
+                  `${githubRepo}`,
+                  `${environment}`,
+                  url
+                );
+              } else {
+                logger.error(
+                  'Cloud not determine environment; unable to complete deployment configuration'
+                );
+                process.exit(1)
+              }
             } else {
               logger.debug(
                 'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
@@ -203,7 +215,12 @@ async function main() {
       await action();
     });
 
-  program.command('delete').action((_) => {
+  program
+    .command('delete')
+    .addOption(
+      new Option('-e, --environment <fqdn>', 'repository environment').default('')
+    )
+    .action((_) => {
     Promise.all(checks).then(async () => {
       const projectName = await project(program.opts()['remote']);
       const workerArg = program.opts()['name'];
@@ -235,15 +252,23 @@ async function main() {
           const githubRepo = process.env['GITHUB_REPOSITORY'];
           if (githubToken) {
             if (githubRepo) {
-              const environment = await branch();
-              logger.debug(
-                `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
-              );
-              await cleanGithubDeployments(
-                `${githubToken}`,
-                `${githubRepo}`,
-                `${environment}`
-              );
+              const gitBranch = await branch();
+              const environment = environmentArg ? environmentArg : gitBranch;
+              if (environment) {
+                logger.debug(
+                  `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
+                );
+                await cleanGithubDeployments(
+                  `${githubToken}`,
+                  `${githubRepo}`,
+                  `${environment}`
+                );
+              } else {
+                logger.error(
+                  'Cloud not determine environment; unable to complete deployment configuration'
+                );
+                process.exit(1)
+              }
             } else {
               logger.debug(
                 'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
