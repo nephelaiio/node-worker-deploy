@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Command, Option } from 'commander';
+import { CWD } from './constants';
 
 import { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CWD } from './constants';
 import { logger, verbose, quiet, info } from './logger';
@@ -181,17 +182,17 @@ async function main() {
         if (process.env['GITHUB_ACTIONS'] == 'true') {
           if (githubToken) {
             if (githubRepo) {
-              branch().then(async (environment) => {
-                logger.debug(
-                  `Registering deployment for github repository ${githubRepo}, environment ${environment}`
-                );
-                await createGithubDeployment(
-                  `${githubToken}`,
-                  `${githubRepo}`,
-                  `${environment}`,
-                  url
-                );
-              });
+              logger.debug(`CWD: ${CWD}`);
+              const environment = await branch();
+              logger.debug(
+                `Registering deployment for github repository ${githubRepo}, environment ${environment}`
+              );
+              await createGithubDeployment(
+                `${githubToken}`,
+                `${githubRepo}`,
+                `${environment}`,
+                url
+              );
             } else {
               logger.debug(
                 'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
@@ -246,16 +247,16 @@ async function main() {
             const githubRepo = process.env['GITHUB_REPOSITORY'];
             if (githubToken) {
               if (githubRepo) {
-                branch().then(async (environment) => {
-                  logger.debug(
-                    `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
-                  );
-                  await cleanGithubDeployments(
-                    `${githubToken}`,
-                    `${githubRepo}`,
-                    `${environment}`
-                  );
-                });
+                logger.debug(`CWD: ${CWD}`);
+                const environment = await branch();
+                logger.debug(
+                  `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
+                );
+                await cleanGithubDeployments(
+                  `${githubToken}`,
+                  `${githubRepo}`,
+                  `${environment}`
+                );
               } else {
                 logger.debug(
                   'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
