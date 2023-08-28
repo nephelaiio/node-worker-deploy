@@ -190,7 +190,7 @@ async function main() {
             }
           }
         } else {
-          logger.debug('no environment configuration requested');
+          logger.debug('No environment configuration requested');
         }
         console.log(url);
       };
@@ -250,7 +250,7 @@ async function main() {
             }
           }
         } else {
-          logger.debug('no environment configuration requested');
+          logger.debug('No environment configuration requested');
         }
       }
     });
