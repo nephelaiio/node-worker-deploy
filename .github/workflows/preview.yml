@@ -60,8 +60,9 @@ jobs:
         id: deploy
 
       - name: Test deployed Cloudflare worker
-        run: >
-          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 --retry-all-errors ${{ steps.deploy.outputs.stdout }}
+        run: |
+          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 \
+            --retry-all-errors ${{ steps.deploy.outputs.stdout }}
 
   cleanup:
     if: github.event.action == 'closed'
