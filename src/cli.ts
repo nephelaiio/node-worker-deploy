@@ -128,8 +128,8 @@ async function main() {
       const githubToken = process.env['GITHUB_TOKEN'];
       const githubRepo = process.env['GITHUB_REPOSITORY'];
       const workerArg = program.opts()['name'];
-      const environmentArg = program.opts()['environment'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+      const environmentArg = options.environment;
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -225,6 +225,7 @@ async function main() {
       const projectName = await project(program.opts()['remote']);
       const workerArg = program.opts()['name'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+      const environmentArg = options.environment;
       if (worker != projectName) {
         const deployment = await getWorker(
           `${CLOUDFLARE_API_TOKEN}`,
