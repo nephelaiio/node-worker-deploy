@@ -119,7 +119,7 @@ async function main() {
     .option('-v, --variable <string>', 'worker variable (list)', collect, [])
     .option('-r, --route <fqdn>', 'worker route [list]', collect, [])
     .addOption(
-      new Option('-e, --environment <fqdn>', 'repository environment').default('')
+      new Option('-e, --env <env>', 'repository environment').default('')
     )
     .addOption(
       new Option('-d, --subdomain <string>', 'worker subdomain').default('')
@@ -197,7 +197,7 @@ async function main() {
                 logger.error(
                   'Cloud not determine environment; unable to complete deployment configuration'
                 );
-                process.exit(1)
+                process.exit(1);
               }
             } else {
               logger.debug(
@@ -218,72 +218,72 @@ async function main() {
   program
     .command('delete')
     .addOption(
-      new Option('-e, --environment <fqdn>', 'repository environment').default('')
+      new Option('-e, --env <env>', 'repository environment').default('')
     )
-    .action((_) => {
-    Promise.all(checks).then(async () => {
-      const projectName = await project(program.opts()['remote']);
-      const workerArg = program.opts()['name'];
-      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-      const environmentArg = options.environment;
-      if (worker != projectName) {
-        const deployment = await getWorker(
-          `${CLOUDFLARE_API_TOKEN}`,
-          `${CLOUDFLARE_ACCOUNT_ID}`,
-          worker
-        );
-        if (deployment) {
-          logger.info(`Deleting worker ${worker}`);
-          const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
-          wrangler(
-            (cfg) => {
-              cfg.name = worker;
-              cfg.account_id = accountId;
-              return cfg;
-            },
-            () => {
-              exec(`wrangler delete --name ${worker}`);
-            }
+    .action(async (options) => {
+      Promise.all(checks).then(async () => {
+        const projectName = await project(program.opts()['remote']);
+        const workerArg = program.opts()['name'];
+        const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+        const environmentArg = options.environment;
+        if (worker != projectName) {
+          const deployment = await getWorker(
+            `${CLOUDFLARE_API_TOKEN}`,
+            `${CLOUDFLARE_ACCOUNT_ID}`,
+            worker
           );
-        } else {
-          logger.debug(`Worker ${worker} not found`);
-        }
-        if (process.env['GITHUB_ACTIONS'] == 'true') {
-          const githubToken = process.env['GITHUB_TOKEN'];
-          const githubRepo = process.env['GITHUB_REPOSITORY'];
-          if (githubToken) {
-            if (githubRepo) {
-              const gitBranch = await branch();
-              const environment = environmentArg ? environmentArg : gitBranch;
-              if (environment) {
-                logger.debug(
-                  `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
-                );
-                await cleanGithubDeployments(
-                  `${githubToken}`,
-                  `${githubRepo}`,
-                  `${environment}`
-                );
+          if (deployment) {
+            logger.info(`Deleting worker ${worker}`);
+            const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
+            wrangler(
+              (cfg) => {
+                cfg.name = worker;
+                cfg.account_id = accountId;
+                return cfg;
+              },
+              () => {
+                exec(`wrangler delete --name ${worker}`);
+              }
+            );
+          } else {
+            logger.debug(`Worker ${worker} not found`);
+          }
+          if (process.env['GITHUB_ACTIONS'] == 'true') {
+            const githubToken = process.env['GITHUB_TOKEN'];
+            const githubRepo = process.env['GITHUB_REPOSITORY'];
+            if (githubToken) {
+              if (githubRepo) {
+                const gitBranch = await branch();
+                const environment = environmentArg ? environmentArg : gitBranch;
+                if (environment) {
+                  logger.debug(
+                    `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
+                  );
+                  await cleanGithubDeployments(
+                    `${githubToken}`,
+                    `${githubRepo}`,
+                    `${environment}`
+                  );
+                } else {
+                  logger.error(
+                    'Cloud not determine environment; unable to complete deployment configuration'
+                  );
+                  process.exit(1);
+                }
               } else {
-                logger.error(
-                  'Cloud not determine environment; unable to complete deployment configuration'
+                logger.debug(
+                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
                 );
-                process.exit(1)
               }
             } else {
               logger.debug(
-                'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
               );
             }
-          } else {
-            logger.debug(
-              'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
-            );
           }
         }
-      }
+      });
     });
-  });
   program.parse(process.argv);
 }
 
