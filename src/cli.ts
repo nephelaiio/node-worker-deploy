@@ -11,7 +11,8 @@ import {
   wrangler,
   workerURL,
   defaultWorkerName,
-  project
+  project,
+  branch
 } from './deploy';
 import { getWorkerSubdomain } from './cloudflare';
 import { exec } from './npm';
@@ -128,7 +129,7 @@ async function main() {
       const githubRepo = process.env['GITHUB_REPOSITORY'];
       const workerArg = program.opts()['name'];
       const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-      const environment = options.environment;
+      const environmentArg = options.environment;
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -178,9 +179,9 @@ async function main() {
         }
         const url = await workerURL(worker, options.subdomain);
         if (process.env['GITHUB_ACTIONS'] == 'true') {
-          if (environment != '') {
-            if (githubToken) {
-              if (githubRepo) {
+          if (githubToken) {
+            if (githubRepo) {
+              branch().then((environment) => {
                 logger.debug(
                   `Registering deployment for github repository ${githubRepo}, environment ${environment}`
                 );
@@ -190,19 +191,15 @@ async function main() {
                   `${environment}`,
                   url
                 );
-              } else {
-                logger.debug(
-                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
-                );
-              }
+              });
             } else {
               logger.debug(
-                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
+                'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
               );
             }
           } else {
-            logger.error(
-              'No environment defined; skipping deployment configuration'
+            logger.debug(
+              'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
             );
           }
         }
@@ -221,7 +218,7 @@ async function main() {
         const projectName = await project(program.opts()['remote']);
         const workerArg = program.opts()['name'];
         const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-        const environment = options.environment;
+        const environmentArg = options.environment;
         if (worker != projectName) {
           const deployment = await getWorker(
             `${CLOUDFLARE_API_TOKEN}`,
@@ -247,9 +244,9 @@ async function main() {
           if (process.env['GITHUB_ACTIONS'] == 'true') {
             const githubToken = process.env['GITHUB_TOKEN'];
             const githubRepo = process.env['GITHUB_REPOSITORY'];
-            if (environment != '') {
-              if (githubToken) {
-                if (githubRepo) {
+            if (githubToken) {
+              if (githubRepo) {
+                branch().then((environment) => {
                   logger.debug(
                     `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
                   );
@@ -258,19 +255,15 @@ async function main() {
                     `${githubRepo}`,
                     `${environment}`
                   );
-                } else {
-                  logger.debug(
-                    'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
-                  );
-                }
+                });
               } else {
                 logger.debug(
-                  'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
+                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
                 );
               }
             } else {
-              logger.error(
-                'No environment defined; skipping deployment configuration'
+              logger.debug(
+                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
               );
             }
           }
