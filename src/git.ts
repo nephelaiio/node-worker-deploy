@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import git from 'isomorphic-git';
 
 import { CWD } from './constants';
+import { logger } from './logger';
 
 async function project(remote = ''): Promise<string> {
   const gitRemote = await git.getConfig({
