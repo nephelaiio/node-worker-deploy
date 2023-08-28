@@ -56,6 +56,7 @@ jobs:
               --literal GITHUB_APPLY:true \
               --variable WORKER \
               --secret GITHUB_TOKEN \
+              --environment "$BRANCH" \
               --name "$WORKER"
         id: deploy
 
@@ -100,6 +101,7 @@ jobs:
           run: |
             npm run delete -- \
               --verbose \
+              --environment "$BRANCH" \
               --name "$WORKER"
 
       - name: Test Cloudflare worker deletion

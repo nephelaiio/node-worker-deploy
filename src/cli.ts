@@ -10,9 +10,7 @@ import {
   deploy,
   wrangler,
   workerURL,
-  defaultWorkerName,
-  project,
-  branch
+  project
 } from './deploy';
 import { getWorkerSubdomain } from './cloudflare';
 import { exec } from './npm';
@@ -94,15 +92,13 @@ async function main() {
     .addOption(
       new Option('-k, --insecure', 'disable ssl verification').default(false)
     )
-    .addOption(
-      new Option('-n, --name <string>', 'worker deployment name').default('')
-    )
+    .requiredOption('-n, --name <string>', 'worker deployment name')
+    .option('-e, --environment <env>', 'repository environment', null)
     .hook('preAction', async (program, _) => {
       const isVerbose = program.opts()['verbose'];
       const isQuiet = program.opts()['quiet'];
       const isInsecure = program.opts()['insecure'];
-      const workerArg = program.opts()['name'];
-      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
+      const worker = program.opts()['name'];
       if (isVerbose) verbose();
       if (isQuiet) quiet();
       if (!isQuiet && !isVerbose) info();
@@ -119,17 +115,13 @@ async function main() {
     .option('-v, --variable <string>', 'worker variable (list)', collect, [])
     .option('-r, --route <fqdn>', 'worker route [list]', collect, [])
     .addOption(
-      new Option('-e, --env <env>', 'repository environment').default('')
-    )
-    .addOption(
       new Option('-d, --subdomain <string>', 'worker subdomain').default('')
     )
     .action(async (options) => {
       const githubToken = process.env['GITHUB_TOKEN'];
       const githubRepo = process.env['GITHUB_REPOSITORY'];
-      const workerArg = program.opts()['name'];
-      const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-      const environmentArg = options.environment;
+      const worker = program.opts()['name'];
+      const environment = program.opts()['environment'];
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -178,29 +170,32 @@ async function main() {
           process.exit(1);
         }
         const url = await workerURL(worker, options.subdomain);
-        if (process.env['GITHUB_ACTIONS'] == 'true') {
-          if (githubToken) {
-            if (githubRepo) {
-              const environment = await branch();
-              logger.debug(
-                `Registering deployment for github repository ${githubRepo}, environment ${environment}`
-              );
-              await createGithubDeployment(
-                `${githubToken}`,
-                `${githubRepo}`,
-                `${environment}`,
-                url
-              );
+        if (environment) {
+          if (process.env['GITHUB_ACTIONS'] == 'true') {
+            if (githubToken) {
+              if (githubRepo) {
+                logger.debug(
+                  `Registering deployment for github repository ${githubRepo}, environment ${environment}`
+                );
+                await createGithubDeployment(
+                  `${githubToken}`,
+                  `${githubRepo}`,
+                  `${environment}`,
+                  url
+                );
+              } else {
+                logger.debug(
+                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                );
+              }
             } else {
               logger.debug(
-                'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
               );
             }
-          } else {
-            logger.debug(
-              'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
-            );
           }
+        } else {
+          logger.debug('no environment configuration requested');
         }
         console.log(url);
       };
@@ -209,15 +204,11 @@ async function main() {
 
   program
     .command('delete')
-    .addOption(
-      new Option('-e, --env <env>', 'repository environment').default('')
-    )
-    .action(async (options) => {
+    .action(async (_) => {
       Promise.all(checks).then(async () => {
         const projectName = await project(program.opts()['remote']);
-        const workerArg = program.opts()['name'];
-        const worker = workerArg != '' ? workerArg : await defaultWorkerName();
-        const environmentArg = options.environment;
+        const worker = program.opts()['name'];
+        const environment = program.opts()['environment'];
         if (worker != projectName) {
           const deployment = await getWorker(
             `${CLOUDFLARE_API_TOKEN}`,
@@ -240,30 +231,33 @@ async function main() {
           } else {
             logger.debug(`Worker ${worker} not found`);
           }
-          if (process.env['GITHUB_ACTIONS'] == 'true') {
-            const githubToken = process.env['GITHUB_TOKEN'];
-            const githubRepo = process.env['GITHUB_REPOSITORY'];
-            if (githubToken) {
-              if (githubRepo) {
-                const environment = await branch();
-                logger.debug(
-                  `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
-                );
-                await cleanGithubDeployments(
-                  `${githubToken}`,
-                  `${githubRepo}`,
-                  `${environment}`
-                );
+          if (environment) {
+            if (process.env['GITHUB_ACTIONS'] == 'true') {
+              const githubToken = process.env['GITHUB_TOKEN'];
+              const githubRepo = process.env['GITHUB_REPOSITORY'];
+              if (githubToken) {
+                if (githubRepo) {
+                  logger.debug(
+                    `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
+                  );
+                  await cleanGithubDeployments(
+                    `${githubToken}`,
+                    `${githubRepo}`,
+                    `${environment}`
+                  );
+                } else {
+                  logger.debug(
+                    'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  );
+                }
               } else {
                 logger.debug(
-                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
                 );
               }
-            } else {
-              logger.debug(
-                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
-              );
             }
+          } else {
+            logger.debug('no environment configuration requested');
           }
         }
       });
