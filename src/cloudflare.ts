@@ -15,7 +15,7 @@ export type Route = {
   id?: string;
 };
 
-async function retry(fn: () => Promise<any>) {
+async function retry(fn: () => Promise<any>, times = CLOUDFLARE_RETRIES) {
   for (let i = 0; i < times; i++) {
     try {
       return await fn();
@@ -25,7 +25,6 @@ async function retry(fn: () => Promise<any>) {
       }
     }
   }
-
 }
 
 // from https://dmitripavlutin.com/timeout-fetch-request/
