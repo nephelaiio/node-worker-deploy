@@ -11,7 +11,7 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       WRANGLER_SEND_METRICS: false
       OWNER: ${{ github.repository_owner }}
       REPOSITORY: ${{ github.repository }}
@@ -66,7 +66,7 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+              --secret GITHUB_TOKEN \
               --name "$WORKER" \
               --route "$FQDN/*";
 
@@ -111,7 +111,7 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+              --secret GITHUB_TOKEN \
               --name "$WORKER" \
               --route "$FQDN/hello" \
               --route "$FQDN/hola";
@@ -202,7 +202,7 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+              --secret GITHUB_TOKEN \
               --name "$WORKER" \
               --route "$FQDN/hello" \
               --route "$FQDN/hallo";
@@ -263,7 +263,7 @@ jobs:
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
-              --secret GITHUB_TOKEN:GH_TOKEN \
+              --secret GITHUB_TOKEN \
               --name "$WORKER" \
               --route "$FQDN/*";
 

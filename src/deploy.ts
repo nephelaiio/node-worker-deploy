@@ -16,17 +16,7 @@ import {
   deleteRoute
 } from './cloudflare';
 import { cli } from './npm';
-import { project, branch } from './git';
-
-async function defaultWorkerName(): Promise<string> {
-  const _project = await project();
-  const _branch = await branch();
-  if (_branch == 'main' || _branch == 'master') {
-    return _project;
-  } else {
-    return `${_project}-${_branch}`;
-  }
-}
+import { project } from './git';
 
 async function workerURL(
   name: string,
@@ -126,4 +116,4 @@ async function deploy(
   );
 }
 
-export { deploy, wrangler, workerURL, defaultWorkerName, project, branch };
+export { deploy, wrangler, workerURL, project };

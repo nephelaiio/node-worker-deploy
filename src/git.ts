@@ -23,10 +23,4 @@ async function project(remote = ''): Promise<string> {
   return repo;
 }
 
-async function branch(name = ''): Promise<string> {
-  const gitBranch = await git.currentBranch({ fs, dir: CWD });
-  const branch = name != '' ? name : gitBranch;
-  return `${branch}`;
-}
-
-export { project, branch };
+export { project };
