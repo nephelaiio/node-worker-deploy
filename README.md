@@ -44,10 +44,11 @@ changes, create a pull request.
 
 Here's a list of planned tasks for the project:
 
-- Add support for running as a Github Action
-- Add support for email routing
+- Add support for deploying and linking KV stores
+- Add support for deploying and linking R2 buckets
 - Add support for deploying and linking Durable Objects
 - Add support for deploying, linking and initializing D1 DBs
+- Add support for running as a Github Action
 
 Before submitting a pull request, please ensure that your code follows our code
 style guidelines and that all tests pass. You can run tests with the command
