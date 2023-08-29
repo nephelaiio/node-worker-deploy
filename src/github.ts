@@ -63,7 +63,7 @@ async function initGithubDeployment(
     } else {
       logger.debug(`Created deployment ${JSON.stringify(deployment)}`);
     }
-    return deployment.id;
+    return deployment.data.id;
   }
 }
 
