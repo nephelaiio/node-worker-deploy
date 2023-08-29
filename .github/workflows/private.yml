@@ -53,7 +53,7 @@ jobs:
           run: |
             npm run deploy -- \
               --verbose \
-              -- private \
+              --private \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
               --secret GITHUB_TOKEN \
