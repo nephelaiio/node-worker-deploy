@@ -207,7 +207,9 @@ async function main() {
           }
           console.log(url);
         } else {
-          logger.debug('Private worker requested; skipping deployment configuration');
+          logger.debug(
+            'Private worker requested; skipping deployment configuration'
+          );
         }
       };
       await action();
