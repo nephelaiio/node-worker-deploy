@@ -80,8 +80,7 @@ async function main() {
         .conflicts('quiet')
     )
     .addOption(
-      new Option('-p, --private', 'disable workers.dev route')
-        .default(false)
+      new Option('-p, --private', 'disable workers.dev route').default(false)
     )
     .addOption(
       new Option('-q, --quiet', 'quiet output')
@@ -164,7 +163,14 @@ async function main() {
       const action = async () => {
         logger.info(`Deploying worker ${worker}`);
         try {
-          await deploy(worker, varArgs, literalArgs, secretArgs, options.route, workersDev);
+          await deploy(
+            worker,
+            varArgs,
+            literalArgs,
+            secretArgs,
+            options.route,
+            workersDev
+          );
         } catch (e) {
           logger.error('Error deploying worker. Aborting');
           process.exit(1);

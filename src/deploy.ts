@@ -38,7 +38,9 @@ async function wrangler(config: (any) => any, fn: () => void) {
   const configObject = parseTOML(configSaved);
   const configEphemeral = config(configObject);
   try {
-    logger.debug(`Ephemeral wrangler configuration: ${JSON.stringify(configEphemeral)}`);
+    logger.debug(
+      `Ephemeral wrangler configuration: ${JSON.stringify(configEphemeral)}`
+    );
     logger.debug(`Writing ephemeral wrangler configuration`);
     fs.writeFileSync(`${CWD}/wrangler.toml`, stringify(configEphemeral));
     await fn();
