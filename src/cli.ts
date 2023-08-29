@@ -118,6 +118,7 @@ async function main() {
     .action(async (options) => {
       const githubToken = process.env['GITHUB_TOKEN'];
       const githubRepo = process.env['GITHUB_REPOSITORY'];
+      const githubActions = process.env['GITHUB_ACTIONS'];
       const worker = program.opts()['name'];
       const environment = program.opts()['environment'];
       const workersDev = !(program.opts()['private'] as boolean);
@@ -176,35 +177,37 @@ async function main() {
           process.exit(1);
         }
         const url = await workerURL(worker, options.subdomain);
-        if (environment) {
-          if (process.env['GITHUB_ACTIONS'] == 'true') {
-            if (githubToken) {
-              if (githubRepo) {
-                logger.debug(
-                  `Registering deployment for github repository ${githubRepo}, environment ${environment}`
-                );
-                await createGithubDeployment(
-                  `${githubToken}`,
-                  `${githubRepo}`,
-                  `${environment}`,
-                  url
-                );
+        if (workersDev) {
+          if (environment) {
+            if (githubActions) {
+              if (githubToken) {
+                if (githubRepo) {
+                  logger.debug(
+                    `Registering deployment for github repository ${githubRepo}, environment ${environment}`
+                  );
+                  await createGithubDeployment(
+                    `${githubToken}`,
+                    `${githubRepo}`,
+                    `${environment}`,
+                    url
+                  );
+                } else {
+                  logger.debug(
+                    'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  );
+                }
               } else {
                 logger.debug(
-                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
                 );
               }
-            } else {
-              logger.debug(
-                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
-              );
             }
+          } else {
+            logger.debug('No environment configuration requested');
           }
-        } else {
-          logger.debug('No environment configuration requested');
-        }
-        if (workersDev) {
           console.log(url);
+        } else {
+          logger.debug('Private worker requested; skipping deployment configuration');
         }
       };
       await action();
