@@ -5,7 +5,8 @@ import { logger } from './logger';
 
 const ORIGINLESS_TYPE = 'AAAA';
 const ORIGINLESS_CONTENT = '100::';
-const CLOUDFLARE_TIMEOUT = 10000;
+const CLOUDFLARE_TIMEOUT = 5000;
+const CLOUDFLARE_RETRIES = 3;
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 export type Route = {
@@ -13,6 +14,19 @@ export type Route = {
   zone_id: any;
   id?: string;
 };
+
+async function retry(fn: () => Promise<any>) {
+  for (let i = 0; i < times; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i == times - 1) {
+        throw e;
+      }
+    }
+  }
+
+}
 
 // from https://dmitripavlutin.com/timeout-fetch-request/
 async function fetchWithTimeout(resource: string, options: any) {
@@ -45,10 +59,13 @@ const cloudflareAPI = async (
   logger.debug(`Fetching ${method} ${uri}`);
   async function fetchData(url: string) {
     if (method == 'GET' || method == 'HEAD') {
-      const response = await fetchWithTimeout(url, {
-        method,
-        headers
-      });
+      const response = await retry(
+        async () =>
+          await fetchWithTimeout(url, {
+            method,
+            headers
+          })
+      );
       if (response.ok || expected_errors.some((x) => x == response.status)) {
         logger.debug(`Got response ${response.status} for ${method} ${uri}`);
         return response;
