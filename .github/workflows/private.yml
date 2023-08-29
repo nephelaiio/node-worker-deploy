@@ -1,5 +1,5 @@
 ---
-name: preview
+name: private
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ env:
   CUSTOM_DOMAIN: nephelai.io
 
 jobs:
-  preview:
+  private:
     if: github.event.pull_request.type != 'closed'
     runs-on: ubuntu-latest
     steps:
@@ -53,14 +53,36 @@ jobs:
           run: |
             npm run deploy -- \
               --verbose \
+              --private \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
               --secret GITHUB_TOKEN \
               --environment "$BRANCH" \
+              --route "$FQDN/*" \
               --name "$WORKER"
-        id: deploy
 
       - name: Test deployed Cloudflare worker
         run: |
           curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 \
-            --retry-all-errors ${{ steps.deploy.outputs.stdout }}
+            --retry-all-errors $FQDN
+
+      - name: Query workers dev publication
+        run: |
+          http $CF_DOM $CF_AUTH | jq '.result.enabled' -r
+        env:
+          CF_API: https://api.cloudflare.com/client/v4
+          CF_WKR: $CF_API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers
+          CF_ENV: $CF_WKR/services/$WORKER/environments
+          CF_DOM: $CF_ENV/production/subdomain
+          CF_AUTH: "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+        id: subdomain
+
+      - name: Verify workers dev publication
+        run: |
+          if [[ "${{ steps.subdomain.outputs.stdout }}" == "true" ]]; then \
+            echo "workers.dev domain is active for worker $WORKER"; \
+            exit 1; \
+          else \
+            echo "workers.dev domain is inactive for worker $WORKER"; \
+            exit 0; \
+          fi

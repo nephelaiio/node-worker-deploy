@@ -80,6 +80,9 @@ async function main() {
         .conflicts('quiet')
     )
     .addOption(
+      new Option('-p, --private', 'disable workers.dev route').default(false)
+    )
+    .addOption(
       new Option('-q, --quiet', 'quiet output')
         .default(false)
         .conflicts('verbose')
@@ -115,8 +118,10 @@ async function main() {
     .action(async (options) => {
       const githubToken = process.env['GITHUB_TOKEN'];
       const githubRepo = process.env['GITHUB_REPOSITORY'];
+      const githubActions = process.env['GITHUB_ACTIONS'];
       const worker = program.opts()['name'];
       const environment = program.opts()['environment'];
+      const workersDev = !(program.opts()['private'] as boolean);
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -159,40 +164,53 @@ async function main() {
       const action = async () => {
         logger.info(`Deploying worker ${worker}`);
         try {
-          await deploy(worker, varArgs, literalArgs, secretArgs, options.route);
+          await deploy(
+            worker,
+            varArgs,
+            literalArgs,
+            secretArgs,
+            options.route,
+            workersDev
+          );
         } catch (e) {
           logger.error('Error deploying worker. Aborting');
           process.exit(1);
         }
         const url = await workerURL(worker, options.subdomain);
-        if (environment) {
-          if (process.env['GITHUB_ACTIONS'] == 'true') {
-            if (githubToken) {
-              if (githubRepo) {
-                logger.debug(
-                  `Registering deployment for github repository ${githubRepo}, environment ${environment}`
-                );
-                await createGithubDeployment(
-                  `${githubToken}`,
-                  `${githubRepo}`,
-                  `${environment}`,
-                  url
-                );
+        if (workersDev) {
+          if (environment) {
+            if (githubActions) {
+              if (githubToken) {
+                if (githubRepo) {
+                  logger.debug(
+                    `Registering deployment for github repository ${githubRepo}, environment ${environment}`
+                  );
+                  await createGithubDeployment(
+                    `${githubToken}`,
+                    `${githubRepo}`,
+                    `${environment}`,
+                    url
+                  );
+                } else {
+                  logger.debug(
+                    'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  );
+                }
               } else {
                 logger.debug(
-                  'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
+                  'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
                 );
               }
-            } else {
-              logger.debug(
-                'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
-              );
             }
+          } else {
+            logger.debug('No environment configuration requested');
           }
+          console.log(url);
         } else {
-          logger.debug('No environment configuration requested');
+          logger.debug(
+            'Private worker requested; skipping deployment configuration'
+          );
         }
-        console.log(url);
       };
       await action();
     });
