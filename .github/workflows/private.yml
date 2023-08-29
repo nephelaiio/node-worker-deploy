@@ -58,6 +58,7 @@ jobs:
               --variable WORKER \
               --secret GITHUB_TOKEN \
               --environment "$BRANCH" \
+              --route "$FQDN/*" \
               --name "$WORKER"
 
       - name: Test deployed Cloudflare worker
