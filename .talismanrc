@@ -3,3 +3,5 @@ fileignoreconfig:
     ignore_detectors: [filecontent]
   - filename: .github/workflows/routing.yml
     ignore_detectors: [filecontent]
+  - filename: src/cli.ts
+    ignore_detectors: [filecontent]

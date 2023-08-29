@@ -80,6 +80,10 @@ async function main() {
         .conflicts('quiet')
     )
     .addOption(
+      new Option('-p, --private', 'disable workers.dev route')
+        .default(false)
+    )
+    .addOption(
       new Option('-q, --quiet', 'quiet output')
         .default(false)
         .conflicts('verbose')
@@ -117,6 +121,7 @@ async function main() {
       const githubRepo = process.env['GITHUB_REPOSITORY'];
       const worker = program.opts()['name'];
       const environment = program.opts()['environment'];
+      const workersDev = !(program.opts()['private'] as boolean);
       const secretArgs = options.secret.reduce(
         (x: { [id: string]: string }, y: string) => {
           const ySplit = y.split(':');
@@ -159,7 +164,7 @@ async function main() {
       const action = async () => {
         logger.info(`Deploying worker ${worker}`);
         try {
-          await deploy(worker, varArgs, literalArgs, secretArgs, options.route);
+          await deploy(worker, varArgs, literalArgs, secretArgs, options.route, workersDev);
         } catch (e) {
           logger.error('Error deploying worker. Aborting');
           process.exit(1);
@@ -192,7 +197,9 @@ async function main() {
         } else {
           logger.debug('No environment configuration requested');
         }
-        console.log(url);
+        if (workersDev) {
+          console.log(url);
+        }
       };
       await action();
     });

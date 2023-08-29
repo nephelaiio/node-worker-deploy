@@ -38,6 +38,7 @@ async function wrangler(config: (any) => any, fn: () => void) {
   const configObject = parseTOML(configSaved);
   const configEphemeral = config(configObject);
   try {
+    logger.debug(`Ephemeral wrangler configuration: ${JSON.stringify(configEphemeral)}`);
     logger.debug(`Writing ephemeral wrangler configuration`);
     fs.writeFileSync(`${CWD}/wrangler.toml`, stringify(configEphemeral));
     await fn();
@@ -52,7 +53,8 @@ async function deploy(
   variables: { [id: string]: string } = {},
   literals: { [id: string]: string } = {},
   secrets: { [id: string]: string } = {},
-  routes: string[] = []
+  routes: string[] = [],
+  workersDev = false
 ): Promise<void> {
   const token = `${CLOUDFLARE_API_TOKEN}`;
   const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
@@ -78,6 +80,7 @@ async function deploy(
     (cfg) => {
       cfg.name = name;
       cfg.account_id = accountId;
+      cfg.workers_dev = workersDev;
       return cfg;
     },
     async () => {
