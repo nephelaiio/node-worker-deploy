@@ -1,0 +1,87 @@
+---
+name: private
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CF_ACCOUNT_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  WRANGLER_SEND_METRICS: false
+  OWNER: ${{ github.repository_owner }}
+  REPOSITORY: ${{ github.repository }}
+  BRANCH: ${{ github.head_ref }}
+  CUSTOM_DOMAIN: nephelai.io
+
+jobs:
+  private:
+    if: github.event.pull_request.type != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install utilities
+        run: sudo apt-get install -y jq httpie
+
+      - name: Build project
+        run: npm run build --production
+
+      - name: Set worker name envvar
+        run: echo "WORKER=${REPOSITORY/$OWNER\//}-${BRANCH}-${GITHUB_WORKFLOW}" >> $GITHUB_ENV
+
+      - name: Set worker fqdn envvar
+        run: echo "FQDN=${WORKER}.${CUSTOM_DOMAIN}" >> $GITHUB_ENV
+
+      - name: Set worker dns content envvar
+        run: echo "CONTENT=8.8.8.8" >> $GITHUB_ENV
+
+      - name: Deploy Cloudflare Worker
+        uses: mathiasvr/command-output@v2.0.0
+        with:
+          run: |
+            npm run deploy -- \
+              --verbose \
+              -- private \
+              --literal GITHUB_APPLY:true \
+              --variable WORKER \
+              --secret GITHUB_TOKEN \
+              --environment "$BRANCH" \
+              --name "$WORKER"
+
+      - name: Test deployed Cloudflare worker
+        run: |
+          curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 \
+            --retry-all-errors $FQDN
+
+      - name: Query workers dev publication
+        run: |
+          http $CF_DOM $CF_AUTH | jq '.result.enabled' -r
+        env:
+          CF_API: https://api.cloudflare.com/client/v4
+          CF_WKR: $CF_API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers
+          CF_ENV: $CF_WKR/services/$WORKER/environments
+          CF_DOM: $CF_ENV/production/subdomain
+          CF_AUTH: "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+        id: subdomain
+
+      - name: Verify workers dev publication
+        run: |
+          if [[ "${{ steps.subdomain.outputs.stdout }}" == "true" ]]; then \
+            echo "workers.dev domain is active for worker $WORKER"; \
+            exit 1; \
+          else \
+            echo "workers.dev domain is inactive for worker $WORKER"; \
+            exit 0; \
+          fi
