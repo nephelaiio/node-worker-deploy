@@ -48,7 +48,7 @@ jobs:
         uses: mathiasvr/command-output@v2.0.0
         with:
           run: |
-            make run  --deploy \
+            make run -- deploy \
               --verbose \
               --literal GITHUB_APPLY:true \
               --variable WORKER \
