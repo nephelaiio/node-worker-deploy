@@ -12,7 +12,7 @@ Cloudflare Worker and Secret deployments
 Add the following steps to your CI configuration at the appropriate stages
 
 ```
-- name: Deploy Cloudflare worker with custom domain
+- name: Deploy Cloudflare Worker with custom domain
   run: |
     echo Deploying worker "$WORKER"; \
     npx @nephelaiio/worker-deploy -- \
