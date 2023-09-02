@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { logger } from './logger';
+import { debug } from '@nephelaiio/logger';
 import { Octokit } from 'octokit';
 
 async function listGithubDeployments(
@@ -8,7 +8,7 @@ async function listGithubDeployments(
   repository: string,
   environment: string
 ) {
-  logger.debug(
+  debug(
     `Listing deployments for repository '${repository}', environment '${environment}'`
   );
   const query = `ref=${environment}&environment=${environment}`;
@@ -22,7 +22,7 @@ async function listGithubDeployments(
     const yDate = new Date(y.updated_at);
     return xDate.getDate() - yDate.getDate();
   });
-  logger.debug(
+  debug(
     `Found ${sortedDeployments.length} deployments for repository '${repository}', environment '${environment}'`
   );
   return sortedDeployments;
@@ -33,7 +33,7 @@ async function initGithubDeployment(
   repository: string,
   environment: string
 ) {
-  logger.debug(`Retrieving Github deployment for environment '${environment}'`);
+  debug(`Retrieving Github deployment for environment '${environment}'`);
   const deploymentRecords = await listGithubDeployments(
     githubToken,
     repository,
@@ -42,7 +42,7 @@ async function initGithubDeployment(
   const deployments = deploymentRecords || [];
   if (deployments.length > 0) {
     const deployment: any = deployments[0];
-    logger.debug(`Found existing deployment with id ${deployment.id}`);
+    debug(`Found existing deployment with id ${deployment.id}`);
     return deployment.id;
   } else {
     const octokit = new Octokit({ auth: githubToken });
@@ -56,12 +56,12 @@ async function initGithubDeployment(
       }
     );
     if (!deployment) {
-      logger.debug(`Unable to create deployment for repository ${repository}`);
+      debug(`Unable to create deployment for repository ${repository}`);
       throw new Error(
         `Unable to create deployment for repository ${repository}`
       );
     } else {
-      logger.debug(`Created deployment ${JSON.stringify(deployment)}`);
+      debug(`Created deployment ${JSON.stringify(deployment)}`);
     }
     return deployment.data.id;
   }
@@ -73,7 +73,7 @@ async function createGithubDeployment(
   environment: string,
   url: string
 ) {
-  logger.debug(
+  debug(
     `Creating Github deployment for repository '${repository}', environment '${environment}'`
   );
   const octokit = new Octokit({ auth: githubToken });
@@ -90,10 +90,8 @@ async function createGithubDeployment(
     repository,
     environment
   );
-  logger.debug(`Created deployment with id '${deploymentId}'`);
-  logger.debug(
-    `Creating Github deployment status for deployment '${deploymentId}'`
-  );
+  debug(`Created deployment with id '${deploymentId}'`);
+  debug(`Creating Github deployment status for deployment '${deploymentId}'`);
   const deploymentStatus: any = await octokit.request(
     `POST /repos/${repository}/deployments/${deploymentId}/statuses`,
     {
@@ -103,16 +101,12 @@ async function createGithubDeployment(
     }
   );
   if (!deploymentStatus) {
-    logger.debug(
-      `Unable to create deployment status for deployment ${deploymentId}`
-    );
+    debug(`Unable to create deployment status for deployment ${deploymentId}`);
     throw new Error(
       `Unable to create deployment status for deployment ${deploymentId}`
     );
   } else {
-    logger.debug(
-      `Created deployment status with id '${deploymentStatus.data.id}'`
-    );
+    debug(`Created deployment status with id '${deploymentStatus.data.id}'`);
   }
 }
 
@@ -128,7 +122,7 @@ async function cleanGithubDeployments(
     repository,
     environment
   );
-  logger.debug(
+  debug(
     `Found ${allDeployments.length} deployments for environment '${environment}'`
   );
   if (allDeployments.length > keepDeployments) {
@@ -136,10 +130,10 @@ async function cleanGithubDeployments(
       0,
       allDeployments.length - keepDeployments
     );
-    logger.debug(`Removing ${extraDeployments.length} deployments`);
+    debug(`Removing ${extraDeployments.length} deployments`);
     for (const extraDeployment of extraDeployments) {
       const deployment: any = extraDeployment;
-      logger.debug(
+      debug(
         `Removing deployment '${deployment.id}': '${deployment.updated_at}'`
       );
       const inactive = { state: 'inactive' };
@@ -150,7 +144,7 @@ async function cleanGithubDeployments(
       await octokit.request(
         `DELETE /repos/${repository}/deployments/${deployment.id}`
       );
-      logger.debug(`Deployment '${deployment.id}' removed`);
+      debug(`Deployment '${deployment.id}' removed`);
     }
   }
 }

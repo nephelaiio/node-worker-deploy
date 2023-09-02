@@ -11,14 +11,6 @@
   "bin": {
     "worker-deploy": "./dist/deploy.cjs"
   },
-  "scripts": {
-    "test": "vitest run",
-    "build": "webpack",
-    "lint": "prettier --plugin-search-dir . --check . && eslint .",
-    "format": "prettier --plugin-search-dir . --write .",
-    "deploy": "node --no-warnings ./dist/deploy.cjs deploy",
-    "delete": "node --no-warnings ./dist/deploy.cjs delete"
-  },
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -41,6 +33,7 @@
   },
   "dependencies": {
     "@iarna/toml": "^2.2.5",
+    "@nephelaiio/logger": "^0.0.5",
     "commander": "^10.0.1",
     "dotenv": "^16.0.3",
     "isomorphic-git": "^1.23.0",

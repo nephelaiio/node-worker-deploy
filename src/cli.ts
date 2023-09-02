@@ -3,7 +3,7 @@
 import { Command, Option } from 'commander';
 
 import { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CWD } from './constants';
-import { logger, verbose, quiet, info } from './logger';
+import { setVerbose, setQuiet, setInfo, debug, error, info } from '@nephelaiio/logger';
 import { getWorker } from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
 import { deploy, wrangler, workerURL, project } from './deploy';
@@ -15,39 +15,39 @@ import * as dotenv from 'dotenv';
 
 async function checkEnvironment() {
   if (!CLOUDFLARE_API_TOKEN) {
-    logger.error('CLOUDFLARE_API_TOKEN environment variable must be set');
+    error('CLOUDFLARE_API_TOKEN environment variable must be set');
     process.exit(1);
   }
   if (!CLOUDFLARE_ACCOUNT_ID) {
-    logger.error('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
+    error('CLOUDFLARE_ACCOUNT_ID environment variable must be set');
     process.exit(1);
   }
   if (!fs.existsSync('wrangler.toml')) {
-    logger.error('Could not find wrangler.toml in working directory');
+    error('Could not find wrangler.toml in working directory');
     process.exit(1);
   }
 }
 
 async function checkSecrets(secrets: string[]) {
-  logger.debug('Checking secret variables');
+  debug('Checking secret variables');
   Object.entries(secrets).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.error(`Environment variable '${v}' must be set`);
+      error(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
-  logger.debug('Secret validation successful');
+  debug('Secret validation successful');
 }
 
 async function checkVariables(variables: { [id: string]: string }) {
-  logger.debug('Checking environment variables');
+  debug('Checking environment variables');
   Object.entries(variables).forEach(([_, v]) => {
     if (!process.env[v]) {
-      logger.error(`Environment variable '${v}' must be set`);
+      error(`Environment variable '${v}' must be set`);
       process.exit(1);
     }
   });
-  logger.debug('Environment validation successful');
+  debug('Environment validation successful');
 }
 
 async function checkWorkerSubdomain(
@@ -56,7 +56,7 @@ async function checkWorkerSubdomain(
 ) {
   const domain = await getWorkerSubdomain(token, account);
   if (!domain) {
-    logger.error('Cloudflare workers.dev subdomain must be set for account');
+    error('Cloudflare workers.dev subdomain must be set for account');
     process.exit(1);
   }
 }
@@ -97,12 +97,12 @@ async function main() {
       const isQuiet = program.opts()['quiet'];
       const isInsecure = program.opts()['insecure'];
       const worker = program.opts()['name'];
-      if (isVerbose) verbose();
-      if (isQuiet) quiet();
-      if (!isQuiet && !isVerbose) info();
+      if (isVerbose) setVerbose();
+      if (isQuiet) setQuiet();
+      if (!isQuiet && !isVerbose) setInfo();
       if (isInsecure) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-      logger.debug(`Deploying worker ${worker}`);
-      logger.debug(`Validating deployment parameters`);
+      debug(`Deploying worker ${worker}`);
+      debug(`Validating deployment parameters`);
       checks.push(checkEnvironment());
     });
 
@@ -162,7 +162,7 @@ async function main() {
       }
       await Promise.all(checks);
       const action = async () => {
-        logger.info(`Deploying worker ${worker}`);
+        info(`Deploying worker ${worker}`);
         try {
           await deploy(
             worker,
@@ -173,7 +173,7 @@ async function main() {
             workersDev
           );
         } catch (e) {
-          logger.error('Error deploying worker. Aborting');
+          error('Error deploying worker. Aborting');
           process.exit(1);
         }
         const url = await workerURL(worker, options.subdomain);
@@ -182,7 +182,7 @@ async function main() {
             if (githubActions) {
               if (githubToken) {
                 if (githubRepo) {
-                  logger.debug(
+                  debug(
                     `Registering deployment for github repository ${githubRepo}, environment ${environment}`
                   );
                   await createGithubDeployment(
@@ -192,24 +192,22 @@ async function main() {
                     url
                   );
                 } else {
-                  logger.debug(
+                  debug(
                     'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
                   );
                 }
               } else {
-                logger.debug(
+                debug(
                   'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
                 );
               }
             }
           } else {
-            logger.debug('No environment configuration requested');
+            debug('No environment configuration requested');
           }
           console.log(url);
         } else {
-          logger.debug(
-            'Private worker requested; skipping deployment configuration'
-          );
+          debug('Private worker requested; skipping deployment configuration');
         }
       };
       await action();
@@ -227,7 +225,7 @@ async function main() {
           worker
         );
         if (deployment) {
-          logger.info(`Deleting worker ${worker}`);
+          info(`Deleting worker ${worker}`);
           const accountId = `${CLOUDFLARE_ACCOUNT_ID}`;
           wrangler(
             (cfg) => {
@@ -240,7 +238,7 @@ async function main() {
             }
           );
         } else {
-          logger.debug(`Worker ${worker} not found`);
+          debug(`Worker ${worker} not found`);
         }
         if (environment) {
           if (process.env['GITHUB_ACTIONS'] == 'true') {
@@ -248,7 +246,7 @@ async function main() {
             const githubRepo = process.env['GITHUB_REPOSITORY'];
             if (githubToken) {
               if (githubRepo) {
-                logger.debug(
+                debug(
                   `Deleting deployments for github repository ${githubRepo}, environment ${environment}`
                 );
                 await cleanGithubDeployments(
@@ -257,18 +255,18 @@ async function main() {
                   `${environment}`
                 );
               } else {
-                logger.debug(
+                debug(
                   'GITHUB_REPOSITORY env variable is not defined; skipping deployment configuration'
                 );
               }
             } else {
-              logger.debug(
+              debug(
                 'GITHUB_TOKEN env variable is not defined; skipping deployment configuration'
               );
             }
           }
         } else {
-          logger.debug('No environment configuration requested');
+          debug('No environment configuration requested');
         }
       }
     });

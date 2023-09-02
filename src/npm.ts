@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { execSync } from 'child_process';
-import { logger } from './logger';
+import { debug, error } from '@nephelaiio/logger';
 
 function execute(
   command: string,
@@ -10,18 +10,16 @@ function execute(
   const npm = `npm ${mode} -- `;
   const cmd = `${mode == 'cli' ? '' : npm}${command}`;
   try {
-    logger.debug(`Executing '${cmd}'`);
+    debug(`Executing '${cmd}'`);
     const output = execSync(cmd, {
       encoding: 'utf-8',
       timeout: 30000
     }).toString();
-    logger.debug(`'${cmd}' executed successfully`);
+    debug(`'${cmd}' executed successfully`);
     return output;
-  } catch (error: any) {
-    const { status } = error;
-    logger.error(
-      `Command execution failed with status ${status || 'interrupted'}`
-    );
+  } catch (exception: any) {
+    const { status } = exception;
+    error(`Command execution failed with status ${status || 'interrupted'}`);
     throw new Error(`Failed to execute '${cmd}'`);
   }
 }
