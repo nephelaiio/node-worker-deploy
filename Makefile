@@ -20,7 +20,7 @@ build: install webpack
 webpack:
 	npx webpack --mode production
 
-test:
+test: build
 	npx vitest run
 
 version: install build
