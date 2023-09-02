@@ -1,4 +1,4 @@
-.PHONY: install lint eslint prettier build webpack
+.PHONY: install lint eslint prettier build webpack test version run deploy delete
 
 install:
 	npm ci
@@ -19,6 +19,9 @@ build: install webpack
 
 webpack:
 	npx webpack --mode production
+
+test:
+	npx vitest run
 
 version: install build
 	node --no-warnings ./dist/deploy.cjs --version
