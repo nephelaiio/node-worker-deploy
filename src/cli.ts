@@ -3,7 +3,14 @@
 import { Command, Option } from 'commander';
 
 import { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CWD } from './constants';
-import { setVerbose, setQuiet, setInfo, debug, error, info } from '@nephelaiio/logger';
+import {
+  setVerbose,
+  setQuiet,
+  setInfo,
+  debug,
+  error,
+  info
+} from '@nephelaiio/logger';
 import { getWorker } from './cloudflare';
 import { createGithubDeployment, cleanGithubDeployments } from './github';
 import { deploy, wrangler, workerURL, project } from './deploy';
