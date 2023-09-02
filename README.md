@@ -52,7 +52,7 @@ Here's a list of planned tasks for the project:
 
 Before submitting a pull request, please ensure that your code follows our code
 style guidelines and that all tests pass. You can run tests with the command
-`npm test`.
+`make test`.
 
 ## License
 
