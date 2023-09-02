@@ -15,10 +15,13 @@ format: install
 	npx prettier --plugin-search-dir . --write .
 	npx eslint . --fix
 
-build: build compile
+build: install webpack
 
 webpack:
 	npx webpack --mode production
+
+version: install build
+	node --no-warnings ./dist/deploy.cjs --version
 
 deploy: install build
 	node --no-warnings ./dist/deploy.cjs deploy

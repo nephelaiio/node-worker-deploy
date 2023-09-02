@@ -20,3 +20,9 @@ jobs:
       - name: Fail if version has not been updated
         if: steps.check.outputs.changed != 'true'
         run: exit 1
+
+      - name: Install dependencies
+        run: apt-get install -y make
+
+      - name: Run version check
+        run: make version
