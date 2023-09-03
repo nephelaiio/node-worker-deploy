@@ -1,4 +1,4 @@
-.PHONY: install lint eslint prettier build webpack test version run deploy delete
+.PHONY: install lint eslint prettier build webpack test version run
 
 install:
 	npm ci
