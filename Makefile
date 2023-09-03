@@ -29,11 +29,5 @@ version: install build
 run:
 	@node --no-warnings ./dist/deploy.cjs $(filter-out run,$(MAKECMDGOALS))
 
-deploy: install build
-	node --no-warnings ./dist/deploy.cjs deploy $(filter-out $(TARGETS),$(MAKECMDGOALS))
-
-delete: install build
-	node --no-warnings ./dist/deploy.cjs delete $(filter-out $(TARGETS),$(MAKECMDGOALS))
-
 %:
 	@:
