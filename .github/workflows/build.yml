@@ -13,11 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
       - name: Install dependencies
-        run: npm ci
+        run: sudo apt-get install -y make
 
       - name: Build project
-        run: npm run build --production
+        run: make build
 
       - name: Test build artifact
-        run: ./dist/deploy.cjs --help
+        run: make deplo -- --help

@@ -12,7 +12,7 @@ Cloudflare Worker and Secret deployments
 Add the following steps to your CI configuration at the appropriate stages
 
 ```
-- name: Deploy Cloudflare worker with custom domain
+- name: Deploy Cloudflare Worker with custom domain
   run: |
     echo Deploying worker "$WORKER"; \
     npx @nephelaiio/worker-deploy -- \
@@ -52,7 +52,7 @@ Here's a list of planned tasks for the project:
 
 Before submitting a pull request, please ensure that your code follows our code
 style guidelines and that all tests pass. You can run tests with the command
-`npm test`.
+`make test`.
 
 ## License
 

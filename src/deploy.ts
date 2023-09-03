@@ -6,7 +6,7 @@ import { parse as parseTOML, stringify } from '@iarna/toml';
 
 import { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CWD } from './constants';
 
-import { logger } from './logger';
+import { debug } from '@nephelaiio/logger';
 import {
   Route,
   getWorkerSubdomain,
@@ -38,15 +38,15 @@ async function wrangler(config: (any) => any, fn: () => void) {
   const configObject = parseTOML(configSaved);
   const configEphemeral = config(configObject);
   try {
-    logger.debug(
+    debug(
       `Ephemeral wrangler configuration: ${JSON.stringify(configEphemeral)}`
     );
-    logger.debug(`Writing ephemeral wrangler configuration`);
+    debug(`Writing ephemeral wrangler configuration`);
     fs.writeFileSync(`${CWD}/wrangler.toml`, stringify(configEphemeral));
     await fn();
   } finally {
     fs.writeFileSync(`${CWD}/wrangler.toml`, configSaved);
-    logger.debug(`Restored saved wrangler configuration`);
+    debug(`Restored saved wrangler configuration`);
   }
 }
 
@@ -92,23 +92,23 @@ async function deploy(
       const currentRoutes = allRoutes.filter((r) => r.script == name);
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
-      logger.debug(`Account routes: ${JSON.stringify(allRoutes)}`);
-      logger.debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`);
-      logger.debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`);
-      logger.debug(`Worker routes to delete: ${JSON.stringify(delRoutes)}`);
-      logger.debug(`Worker routes to create: ${JSON.stringify(addRoutes)}`);
+      debug(`Account routes: ${JSON.stringify(allRoutes)}`);
+      debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`);
+      debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`);
+      debug(`Worker routes to delete: ${JSON.stringify(delRoutes)}`);
+      debug(`Worker routes to create: ${JSON.stringify(addRoutes)}`);
       const publishCmd = `npm exec wrangler deploy --minify --node-compat`;
       const publishArgs = `--name ${name} ${varArgs} ${literalArgs}`;
       const publishScript = `${publishCmd} -- ${publishArgs}`;
       const routeDeletes = delRoutes.map((r) => {
-        logger.debug(`Deleting route ${r.pattern}`);
+        debug(`Deleting route ${r.pattern}`);
         return deleteRoute(token, accountId, r);
       });
       await Promise.all(routeDeletes);
       const publishOutput = cli(publishScript.trim());
       const publishId = `${publishOutput.split(' ').at(-1)}`.trim();
       const routeAdditions = addRoutes.map((r) => {
-        logger.debug(`Adding route ${r.pattern}`);
+        debug(`Adding route ${r.pattern}`);
         return createRoute(token, accountId, name, r);
       });
       await Promise.all(routeAdditions);
@@ -116,7 +116,7 @@ async function deploy(
       Object.entries(secrets)
         .map(([k, v]) => `echo ${process.env[v]} | ${secretCmd} ${k}`)
         .forEach((s) => cli(s));
-      logger.debug(`Publish ID: ${publishId}`);
+      debug(`Publish ID: ${publishId}`);
     }
   );
 }
