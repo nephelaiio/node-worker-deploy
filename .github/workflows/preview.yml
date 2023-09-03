@@ -57,6 +57,9 @@ jobs:
               --name "$WORKER"
         id: deploy
 
+      - name: Debug Cloudflare worker deploy output
+        run: echo ${{ steps.deploy.outputs.stdout }}
+
       - name: Test deployed Cloudflare worker
         run: |
           curl -sD- --retry 10 --retry-delay 0 --retry-max-time 120 \
