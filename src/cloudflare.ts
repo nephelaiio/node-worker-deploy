@@ -7,6 +7,7 @@ const ORIGINLESS_TYPE = 'AAAA';
 const ORIGINLESS_CONTENT = '100::';
 const CLOUDFLARE_TIMEOUT = 5000;
 const CLOUDFLARE_RETRIES = 3;
+const CLOUDFLARE_BACKOFF = 30;
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 export type Route = {
@@ -15,7 +16,12 @@ export type Route = {
   id?: string;
 };
 
-async function retry(fn: () => Promise<any>, times = CLOUDFLARE_RETRIES) {
+const delay = (s: number) => new Promise(res => setTimeout(res, s));
+
+async function retry(
+  fn: () => Promise<any>,
+  times = CLOUDFLARE_RETRIES,
+  backoff = CLOUDFLARE_BACKOFF) {
   for (let i = 0; i < times; i++) {
     try {
       return await fn();
@@ -23,6 +29,7 @@ async function retry(fn: () => Promise<any>, times = CLOUDFLARE_RETRIES) {
       if (i == times - 1) {
         throw e;
       }
+      await delay(backoff * Math.pow(2, i + 1));
     }
   }
 }

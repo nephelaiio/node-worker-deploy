@@ -1,5 +1,7 @@
 .PHONY: install lint eslint prettier build webpack test version run
 
+BUNDLE=./dist/deploy.cjs
+
 install:
 	npm ci
 
@@ -24,10 +26,10 @@ test: build
 	npx vitest run
 
 version: install build
-	node --no-warnings ./dist/deploy.cjs --version
+	node --no-warnings ${BUNDLE} --version
 
 run:
-	@node --no-warnings ./dist/deploy.cjs $(filter-out run,$(MAKECMDGOALS))
+	@node --no-warnings ${BUNDLE} $(filter-out run,$(MAKECMDGOALS))
 
 %:
 	@:
