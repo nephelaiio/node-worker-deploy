@@ -2,7 +2,7 @@
   "name": "@nephelaiio/worker-deploy",
   "type": "module",
   "version": "0.2.3",
-  "description": "",
+  "description": "CLI helpers for Cloudflare Worker management",
   "main": "dist/deploy.cjs",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "bin": {
     "worker-deploy": "./dist/deploy.cjs"
   },
-  "author": "",
+  "author": "Teodoro Cook <teodoro.cook@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230404.0",
