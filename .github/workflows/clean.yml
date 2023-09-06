@@ -44,4 +44,4 @@ jobs:
         run: |
           make run -- delete \
             --verbose \
-            --name "$worker"
+            --name "$WORKER"
