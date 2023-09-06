@@ -3,9 +3,7 @@
 [![Test](https://github.com/nephelaiio/node-worker-deploy/actions/workflows/test.yml/badge.svg)](https://github.com/nephelaiio/node-worker-github-actions/actions/workflows/test.yml)
 [![Deploy](https://github.com/nephelaiio/node-worker-deploy/actions/workflows/publish.yml/badge.svg)](https://github.com/nephelaiio/node-worker-github-actions/actions/workflows/main.yml)
 
-Worker deploy is an NPM package that uses
-[Cloudflare Workers API](https://developers.cloudflare.com/workers) to automate
-Cloudflare Worker and Secret deployments
+Worker deploy is an NPM package that uses [Cloudflare Workers API](https://developers.cloudflare.com/workers) to automate Cloudflare Worker and Secret deployments
 
 ## Usage
 
@@ -26,7 +24,6 @@ Add the following steps to your CI configuration at the appropriate stages
 ```
 
 ```
-
 - name: Destroy Cloudflare worker
   run: |
     echo Deploying worker "$WORKER"; \
@@ -44,6 +41,7 @@ changes, create a pull request.
 
 Here's a list of planned tasks for the project:
 
+- Refactor API methods to use [@cloudflare/cloudflare-api](https://github.com/nephelaiio/node-cloudflare-api)
 - Add support for deploying and linking KV stores
 - Add support for deploying and linking R2 buckets
 - Add support for deploying and linking Durable Objects
