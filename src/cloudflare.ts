@@ -16,12 +16,13 @@ export type Route = {
   id?: string;
 };
 
-const delay = (s: number) => new Promise(res => setTimeout(res, s));
+const delay = (n: number) => new Promise((res) => setTimeout(res, n));
 
 async function retry(
   fn: () => Promise<any>,
   times = CLOUDFLARE_RETRIES,
-  backoff = CLOUDFLARE_BACKOFF) {
+  backoff = CLOUDFLARE_BACKOFF
+) {
   for (let i = 0; i < times; i++) {
     try {
       return await fn();
