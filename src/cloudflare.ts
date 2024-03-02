@@ -326,7 +326,7 @@ async function listWorkerDomainRoutes(
     token,
     `/zones/${domain}/workers/routes`
   );
-  const routes = routeQuery.result;
+  const routes = unique(routeQuery.result);
   debug(`Found '${routes.length}' matching routes`);
   return routes;
 }
@@ -343,7 +343,7 @@ async function listWorkerRoutes(token: string, account: string): Promise<any> {
     routes.flat().map((x) => {
       debug(`Found route ${x.pattern}`);
     });
-    return routes.flat();
+    return unique(routes.flat());
   } else {
     debug('No routes found');
     return [];
