@@ -341,10 +341,11 @@ async function listWorkerRoutes(token: string, account: string): Promise<any> {
   debug(`Fetching account worker routes`);
   const domainRoutes = async (domain: any) =>
     listWorkerDomainRoutes(token, domain);
+  debug(`Fetching worker domains`);
   const domains = await listWorkerDomains(token, account);
-  const routes = await Promise.all(
-    domains.map((x: any) => x.zone_id).map(domainRoutes)
-  );
+  const domainIds = unique(domains, 'zone_id').map((x: any) => x.zone_id);
+  debug(`Found domain ids ${JSON.stringify(domainIds)}`);
+  const routes = await Promise.all(domainIds.map(domainRoutes));
   if (routes) {
     routes.flat().map((x) => {
       debug(`Found route ${x.id}: ${x.pattern}`);
