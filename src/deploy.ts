@@ -33,6 +33,10 @@ const attrDifference = (x: any[], y: any[], property: string) => {
   return x.filter((j) => !y.some((k) => j[property] == k[property]));
 };
 
+const unique = (xs: any[], property: string = 'id'): any[] => {
+  return Object.values(xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj })));
+}
+
 async function wrangler(config: (any) => any, fn: () => void) {
   const configSaved = fs.readFileSync(`${CWD}/wrangler.toml`).toString();
   const configObject = parseTOML(configSaved);
@@ -88,13 +92,10 @@ async function deploy(
     async () => {
       const configRoutes = (config.routes || []) as Route[];
       const publishRoutes = [...routeData, ...configRoutes];
-      const allRouteData = (await listWorkerRoutes(token, accountId)).flat();
-      const allRoutes = Object.values(allRouteData.reduce((acc, obj) => ({ ...acc, [obj.id]: obj })));
-      const currentRouteData = allRoutes.filter((r) => r.script == name);
-      const currentRoutes = Object.values(currentRouteData.reduce((acc, obj) => ({ ...acc, [obj.id]: obj })));
-      const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
-      const delRouteData = attrDifference(currentRoutes, publishRoutes, 'pattern');
-      const delRoutes = Object.values(delRouteData.reduce((acc, obj) => ({ ...acc, [obj.id]: obj })));
+      const allRoutes = unique((await listWorkerRoutes(token, accountId)).flat());
+      const currentRoutes = unique(allRoutes.filter((r) => r.script == name));
+      const addRoutes = unique(attrDifference(publishRoutes, currentRoutes, 'pattern'));
+      const delRoutes = unique(attrDifference(currentRoutes, publishRoutes, 'pattern'));
       debug(`Account routes: ${JSON.stringify(allRoutes)}`);
       debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`);
       debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`);
