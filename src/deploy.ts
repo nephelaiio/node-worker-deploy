@@ -33,12 +33,6 @@ const attrDifference = (x: any[], y: any[], property: string) => {
   return x.filter((j) => !y.some((k) => j[property] == k[property]));
 };
 
-const unique = (xs: any[], property = 'id'): any[] => {
-  return Object.values(
-    xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj }))
-  );
-};
-
 async function wrangler(config: (any) => any, fn: () => void) {
   const configSaved = fs.readFileSync(`${CWD}/wrangler.toml`).toString();
   const configObject = parseTOML(configSaved);

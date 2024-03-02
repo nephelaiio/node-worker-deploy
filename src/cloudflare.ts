@@ -18,6 +18,12 @@ export type Route = {
 
 const delay = (n: number) => new Promise((res) => setTimeout(res, n));
 
+const unique = (xs: any[], property = 'id'): any[] => {
+  return Object.values(
+    xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj }))
+  );
+};
+
 async function retry(
   fn: () => Promise<any>,
   times = CLOUDFLARE_RETRIES,
