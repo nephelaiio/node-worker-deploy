@@ -89,12 +89,12 @@ async function deploy(
       const configRoutes = (config.routes || []) as Route[];
       const publishRoutes = [...routeData, ...configRoutes];
       const allRouteData = (await listWorkerRoutes(token, accountId)).flat();
-      const allRoutes = Object.values(allRouteData.reduce((acc, ojb) => { ...acc, [obj.id]: obj }));
+      const allRoutes = Object.values(allRouteData.reduce((acc, ojb) => ({ ...acc, [obj.id]: obj })));
       const currentRouteData = allRoutes.filter((r) => r.script == name);
-      const currentRoutes = Object.values(currentRouteData.reduce((acc, ojb) => { ...acc, [obj.id]: obj }));
+      const currentRoutes = Object.values(currentRouteData.reduce((acc, ojb) => ({ ...acc, [obj.id]: obj })));
       const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
       const delRouteData = attrDifference(currentRoutes, publishRoutes, 'pattern');
-      const delRoutes = Object.values(delRouteData.reduce((acc, ojb) => { ...acc, [obj.id]: obj }));
+      const delRoutes = Object.values(delRouteData.reduce((acc, ojb) => ({ ...acc, [obj.id]: obj })));
       debug(`Account routes: ${JSON.stringify(allRoutes)}`);
       debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`);
       debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`);
