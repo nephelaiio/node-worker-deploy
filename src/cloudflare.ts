@@ -7,6 +7,7 @@ const ORIGINLESS_TYPE = 'AAAA';
 const ORIGINLESS_CONTENT = '100::';
 const CLOUDFLARE_TIMEOUT = 5000;
 const CLOUDFLARE_RETRIES = 3;
+const CLOUDFLARE_BACKOFF = 30;
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD';
 export type Route = {
@@ -15,7 +16,19 @@ export type Route = {
   id?: string;
 };
 
-async function retry(fn: () => Promise<any>, times = CLOUDFLARE_RETRIES) {
+const delay = (n: number) => new Promise((res) => setTimeout(res, n));
+
+const unique = (xs: any[], property = 'id'): any[] => {
+  return Object.values(
+    xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj }), {})
+  );
+};
+
+async function retry(
+  fn: () => Promise<any>,
+  times = CLOUDFLARE_RETRIES,
+  backoff = CLOUDFLARE_BACKOFF
+) {
   for (let i = 0; i < times; i++) {
     try {
       return await fn();
@@ -23,6 +36,7 @@ async function retry(fn: () => Promise<any>, times = CLOUDFLARE_RETRIES) {
       if (i == times - 1) {
         throw e;
       }
+      await delay(backoff * Math.pow(2, i + 1));
     }
   }
 }
@@ -314,28 +328,34 @@ async function listWorkerDomainRoutes(
   domain: string
 ): Promise<any> {
   debug(`Fetching routes for zone '${domain}'`);
-  const routeQuery = await cloudflareAPI(
-    token,
-    `/zones/${domain}/workers/routes`
-  );
-  const routes = routeQuery.result;
-  debug(`Found '${routes.length}' matching routes`);
-  return routes;
+  try {
+    const routeQuery = await cloudflareAPI(
+      token,
+      `/zones/${domain}/workers/routes`
+    );
+    const routes = unique(routeQuery.result);
+    debug(`Found '${routes.length}' matching routes`);
+    return routes;
+  } catch (_) {
+    debug(`Unexpected error querying matching routes, ignoring`);
+    return [];
+  }
 }
 
 async function listWorkerRoutes(token: string, account: string): Promise<any> {
   debug(`Fetching account worker routes`);
   const domainRoutes = async (domain: any) =>
     listWorkerDomainRoutes(token, domain);
+  debug(`Fetching worker domains`);
   const domains = await listWorkerDomains(token, account);
-  const routes = await Promise.all(
-    domains.map((x: any) => x.zone_id).map(domainRoutes)
-  );
+  const domainIds = [...new Set(domains.map((x: any) => x.zone_id))];
+  debug(`Found domain ids ${JSON.stringify(domainIds)}`);
+  const routes = await Promise.all(domainIds.map(domainRoutes));
   if (routes) {
     routes.flat().map((x) => {
-      debug(`Found route ${x.pattern}`);
+      debug(`Found route ${x.id}: ${x.pattern}`);
     });
-    return routes.flat();
+    return unique(routes.flat());
   } else {
     debug('No routes found');
     return [];

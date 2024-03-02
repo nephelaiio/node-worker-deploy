@@ -25,4 +25,4 @@ jobs:
         run: make build
 
       - name: Test build artifact
-        run: make deplo -- --help
+        run: make run -- --help
