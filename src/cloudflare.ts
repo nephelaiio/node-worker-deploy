@@ -333,13 +333,13 @@ async function listWorkerDomainRoutes(
       token,
       `/zones/${domain}/workers/routes`
     );
+    const routes = unique(routeQuery.result);
+    debug(`Found '${routes.length}' matching routes`);
+    return routes;
   } catch (_) {
     debug(`Unexpected error querying matching routes, ignoring`);
     return [];
   }
-  const routes = unique(routeQuery.result);
-  debug(`Found '${routes.length}' matching routes`);
-  return routes;
 }
 
 async function listWorkerRoutes(token: string, account: string): Promise<any> {
@@ -348,9 +348,10 @@ async function listWorkerRoutes(token: string, account: string): Promise<any> {
     listWorkerDomainRoutes(token, domain);
   debug(`Fetching worker domains`);
   const domains = await listWorkerDomains(token, account);
-  const domainIds = unique(domains, 'zone_id').
-    filter((x: any) => 'zone_id' in x)
-    map((x: any) => x.zone_id);
+  const domainIds = unique(domains, 'zone_id').filter(
+    (x: any) => 'zone_id' in x
+  );
+  map((x: any) => x.zone_id);
   debug(`Found domain ids ${JSON.stringify(domainIds)}`);
   const routes = await Promise.all(domainIds.map(domainRoutes));
   if (routes) {
