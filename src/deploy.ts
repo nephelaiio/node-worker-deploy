@@ -33,7 +33,7 @@ const attrDifference = (x: any[], y: any[], property: string) => {
   return x.filter((j) => !y.some((k) => j[property] == k[property]));
 };
 
-const unique = (xs: any[], property: string = 'id'): any[] => {
+const unique = (xs: any[], property = 'id'): any[] => {
   return Object.values(xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj })));
 }
 
@@ -94,8 +94,8 @@ async function deploy(
       const publishRoutes = [...routeData, ...configRoutes];
       const allRoutes = unique((await listWorkerRoutes(token, accountId)).flat());
       const currentRoutes = unique(allRoutes.filter((r) => r.script == name));
-      const addRoutes = unique(attrDifference(publishRoutes, currentRoutes, 'pattern'));
-      const delRoutes = unique(attrDifference(currentRoutes, publishRoutes, 'pattern'));
+      const addRoutes = attrDifference(publishRoutes, currentRoutes, 'pattern');
+      const delRoutes = attrDifference(currentRoutes, publishRoutes, 'pattern');
       debug(`Account routes: ${JSON.stringify(allRoutes)}`);
       debug(`Worker routes current: ${JSON.stringify(currentRoutes)}`);
       debug(`Worker routes requested: ${JSON.stringify(publishRoutes)}`);
