@@ -20,7 +20,7 @@ const delay = (n: number) => new Promise((res) => setTimeout(res, n));
 
 const unique = (xs: any[], property = 'id'): any[] => {
   return Object.values(
-    xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj }))
+    xs.reduce((acc, obj) => ({ ...acc, [obj[property]]: obj }), {})
   );
 };
 
