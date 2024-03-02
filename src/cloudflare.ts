@@ -348,6 +348,7 @@ async function listWorkerRoutes(token: string, account: string): Promise<any> {
     listWorkerDomainRoutes(token, domain);
   debug(`Fetching worker domains`);
   const domainData = await listWorkerDomains(token, account);
+  debug(`Got worker domain list ${JSON.stringify(domainData)}`)
   const domains = domainData.filter((x: any) => !(x.zone_id === null));
   const domainIds = unique(domains, 'zone_id').map((x: any) => x.zone_id);
   debug(`Found domain ids ${JSON.stringify(domainIds)}`);
