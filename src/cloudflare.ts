@@ -347,7 +347,7 @@ async function listWorkerRoutes(token: string, account: string): Promise<any> {
   );
   if (routes) {
     routes.flat().map((x) => {
-      debug(`Found route ${x.pattern}`);
+      debug(`Found route ${x.id}: ${x.pattern}`);
     });
     return unique(routes.flat());
   } else {
